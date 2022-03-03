@@ -1,0 +1,8 @@
+mlflow.db
+.env
+outputs/
+mlruns/
+artifacts/
+sqlite/
+**/__pycache__
+*/__pycache__
