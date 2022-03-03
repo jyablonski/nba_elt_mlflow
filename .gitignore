@@ -1,4 +1,4 @@
-mlflow.db
+mflow.db
 .env
 outputs/
 mlruns/
