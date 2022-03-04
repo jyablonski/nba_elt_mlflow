@@ -38,4 +38,6 @@ tonights_games_ml["away_team_predicted_win_pct"] = tonights_ml[
     "away_team_predicted_win_pct"
 ].round(3)
 
+tonights_games_ml.schema = 'Validated'
+
 write_to_sql(conn, "tonights_games_ml", tonights_games_ml, "append")
