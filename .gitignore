@@ -6,6 +6,6 @@ artifacts/
 sqlite/
 **/__pycache__
 */__pycache__
-*/*.joblib
+practice/*.joblib
 */.log
 logs

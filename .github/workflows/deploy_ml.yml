@@ -1,4 +1,4 @@
-name: Prod Deploy - ECR
+name: Prod ML Deploy - ECR
 
 on:
   push:
