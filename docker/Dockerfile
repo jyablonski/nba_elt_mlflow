@@ -27,6 +27,7 @@ USER appuser
 
 COPY src/app.py ./app.py
 COPY src/utils.py ./utils.py
+COPY src/log_model.joblib ./log_model.joblib
 
 RUN mkdir logs
 RUN cat > logs/example.log
