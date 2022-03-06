@@ -4,7 +4,9 @@ import os
 
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
 from sqlalchemy import exc, create_engine
+
 
 def sql_connection(rds_schema: str):
     """
@@ -31,6 +33,7 @@ def sql_connection(rds_schema: str):
         logging.error(f"SQL Connection to schema: {rds_schema} Failed, Error: {e}")
         return e
 
+
 def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str):
     """
     SQL Table function to write a pandas data frame in aws_dfname_source format
@@ -45,14 +48,41 @@ def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str):
             logging.info(f"{table_name} is empty, not writing to SQL")
         elif df.schema == "Validated":
             df.to_sql(
-                con=con,
-                name=f"{table_name}",
-                index=False,
-                if_exists=table_type,
+                con=con, name=f"{table_name}", index=False, if_exists=table_type,
             )
-            logging.info(f"Writing {len(df)} {table_name} rows to aws_{table_name}_source to SQL")
+            logging.info(
+                f"Writing {len(df)} {table_name} rows to aws_{table_name}_source to SQL"
+            )
         else:
             logging.info(f"{table_name} Schema Invalidated, not writing to SQL")
     except BaseException as error:
         logging.error(f"SQL Write Script Failed, {error}")
         return error
+
+
+def calculate_win_pct(
+    ml_df: pd.DataFrame, full_df: pd.DataFrame, ml_model: LogisticRegression
+) -> pd.DataFrame:
+    try:
+        df = pd.DataFrame(ml_model.predict_proba(ml_df)).rename(
+            columns={0: "away_team_predicted_win_pct", 1: "home_team_predicted_win_pct"}
+        )
+        df_final = full_df.reset_index().drop(
+            "outcome", axis=1
+        )  # reset index so predictions match up correctly
+
+        df_final["home_team_predicted_win_pct"] = df[
+            "home_team_predicted_win_pct"
+        ].round(3)
+        df_final["away_team_predicted_win_pct"] = df[
+            "away_team_predicted_win_pct"
+        ].round(3)
+
+        logging.info(f"Predicted Win %s for {len(df_final)} games")
+        df_final.schema = "Validated"
+        return df_final
+
+    except BaseException as e:
+        logging.info(f"Error Occurred, {e}")
+        df = []
+        return df
