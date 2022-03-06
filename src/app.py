@@ -29,32 +29,9 @@ tonights_games = tonights_games_full.drop(
     ["home_team", "away_team", "proper_date", "outcome"], axis=1
 )  # for ml
 
-past_games = pd.read_sql_query("select * from ml_past_games", conn)
-past_games_outcome = past_games["outcome"].to_numpy()
-past_games = past_games.drop(
-    ["home_team", "away_team", "proper_date", "outcome"], axis=1
-).to_numpy()
-
 logging.info(f"Loading Logistic Regression model")
-clf = load('log_model.joblib')
+clf = load("log_model.joblib")
 
-tonights_ml = pd.DataFrame(clf.predict_proba(tonights_games)).rename(
-    columns={0: "away_team_predicted_win_pct", 1: "home_team_predicted_win_pct"}
-)
-
-tonights_games_ml = tonights_games_full.reset_index().drop(
-    "outcome", axis=1
-)  # reset index so predictions match up correctly
-
-tonights_games_ml["home_team_predicted_win_pct"] = tonights_ml[
-    "home_team_predicted_win_pct"
-].round(3)
-tonights_games_ml["away_team_predicted_win_pct"] = tonights_ml[
-    "away_team_predicted_win_pct"
-].round(3)
-
-logging.info(f"Predicted Win %s for {len(tonights_games_ml)} games")
-
-tonights_games_ml.schema = 'Validated'
+tonights_games_ml = calculate_win_pct(tonights_games, tonights_games_full, clf)
 
 write_to_sql(conn, "tonights_games_ml", tonights_games_ml, "append")
