@@ -64,25 +64,37 @@ def calculate_win_pct(
     ml_df: pd.DataFrame, full_df: pd.DataFrame, ml_model: LogisticRegression
 ) -> pd.DataFrame:
     try:
-        df = pd.DataFrame(ml_model.predict_proba(ml_df)).rename(
-            columns={0: "away_team_predicted_win_pct", 1: "home_team_predicted_win_pct"}
-        )
-        df_final = full_df.reset_index().drop(
-            "outcome", axis=1
-        )  # reset index so predictions match up correctly
+        latest_date = pd.to_datetime(
+            pd.to_datetime(full_df["proper_date"].drop_duplicates()).values[0]
+        ).date()
+        if latest_date != datetime.now().date():
+            logging.error("Exiting out, don't have data for Today's Games")
+            df = []
+            return df
 
-        df_final["home_team_predicted_win_pct"] = df[
-            "home_team_predicted_win_pct"
-        ].round(3)
-        df_final["away_team_predicted_win_pct"] = df[
-            "away_team_predicted_win_pct"
-        ].round(3)
+        else:
+            df = pd.DataFrame(ml_model.predict_proba(ml_df)).rename(
+                columns={
+                    0: "away_team_predicted_win_pct",
+                    1: "home_team_predicted_win_pct",
+                }
+            )
+            df_final = full_df.reset_index().drop(
+                "outcome", axis=1
+            )  # reset index so predictions match up correctly
 
-        logging.info(f"Predicted Win %s for {len(df_final)} games")
-        df_final.schema = "Validated"
-        return df_final
+            df_final["home_team_predicted_win_pct"] = df[
+                "home_team_predicted_win_pct"
+            ].round(3)
+            df_final["away_team_predicted_win_pct"] = df[
+                "away_team_predicted_win_pct"
+            ].round(3)
+
+            logging.info(f"Predicted Win %s for {len(df_final)} games")
+            df_final.schema = "Validated"
+            return df_final
 
     except BaseException as e:
-        logging.info(f"Error Occurred, {e}")
+        logging.error(f"Error Occurred, {e}")
         df = []
         return df
