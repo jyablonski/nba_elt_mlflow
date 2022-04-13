@@ -15,7 +15,7 @@ logging.basicConfig(
     handlers=[logging.FileHandler("logs/example.log"), logging.StreamHandler()],
 )
 
-logging.info("STARTING NBA ELT MLFLOW Version: 1.3.2")
+logging.info("STARTING NBA ELT MLFLOW Version: 1.3.3")
 
 conn = sql_connection("ml_models")
 
@@ -27,11 +27,12 @@ tonights_games_full = pd.read_sql_query(
 
 tonights_games = tonights_games_full.drop(
     ["home_team", "away_team", "proper_date", "outcome"], axis=1
-)  # for ml
+)  # i'm just dropping every column not used in ml.
 
 logging.info(f"Loading Logistic Regression model")
 clf = load("log_model.joblib")
 
+# this function performs the prediction and then joins the rest of the columns back in.
 tonights_games_ml = calculate_win_pct(tonights_games, tonights_games_full, clf)
 
 write_to_sql(conn, "tonights_games_ml", tonights_games_ml, "append")

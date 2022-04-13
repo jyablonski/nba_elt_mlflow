@@ -1,7 +1,7 @@
 # Lints all python files
 .PHONY: lint
 lint: 
-	black app.py utils.py tests/conftest.py tests/unit_test.py
+	black src/app.py src/utils.py tests/conftest.py tests/unit_test.py
 
 .PHONY: create-venv
 create-venv:
