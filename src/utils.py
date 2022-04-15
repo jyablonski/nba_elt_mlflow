@@ -64,35 +64,41 @@ def calculate_win_pct(
     ml_df: pd.DataFrame, full_df: pd.DataFrame, ml_model: LogisticRegression
 ) -> pd.DataFrame:
     try:
-        latest_date = pd.to_datetime(
-            pd.to_datetime(full_df["proper_date"].drop_duplicates()).values[0]
-        ).date()
-        if latest_date != datetime.now().date():
+        if len(full_df) > 0:
+            latest_date = pd.to_datetime(
+                pd.to_datetime(full_df["proper_date"].drop_duplicates()).values[0]
+            ).date()
+            if latest_date != datetime.now().date():
+                logging.error("Exiting out, date in tonights_games_ml isn't Today's Date")
+                df = []
+                return df
+
+            else:
+                df = pd.DataFrame(ml_model.predict_proba(ml_df)).rename(
+                    columns={
+                        0: "away_team_predicted_win_pct",
+                        1: "home_team_predicted_win_pct",
+                    }
+                )
+                df_final = full_df.reset_index().drop(
+                    "outcome", axis=1
+                )  # reset index so predictions match up correctly
+
+                df_final["home_team_predicted_win_pct"] = df[
+                    "home_team_predicted_win_pct"
+                ].round(3)
+                df_final["away_team_predicted_win_pct"] = df[
+                    "away_team_predicted_win_pct"
+                ].round(3)
+
+                logging.info(f"Predicted Win %s for {len(df_final)} games")
+                df_final.schema = "Validated"
+                return df_final
+        else:
             logging.error("Exiting out, don't have data for Today's Games")
             df = []
             return df
-
-        else:
-            df = pd.DataFrame(ml_model.predict_proba(ml_df)).rename(
-                columns={
-                    0: "away_team_predicted_win_pct",
-                    1: "home_team_predicted_win_pct",
-                }
-            )
-            df_final = full_df.reset_index().drop(
-                "outcome", axis=1
-            )  # reset index so predictions match up correctly
-
-            df_final["home_team_predicted_win_pct"] = df[
-                "home_team_predicted_win_pct"
-            ].round(3)
-            df_final["away_team_predicted_win_pct"] = df[
-                "away_team_predicted_win_pct"
-            ].round(3)
-
-            logging.info(f"Predicted Win %s for {len(df_final)} games")
-            df_final.schema = "Validated"
-            return df_final
+  
 
     except BaseException as e:
         logging.error(f"Error Occurred, {e}")
