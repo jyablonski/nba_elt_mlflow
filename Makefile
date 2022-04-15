@@ -13,7 +13,7 @@ venv:
 
 .PHONY: test
 test:
-	pytest
+	pytest tests/ -v
 
 .PHONY: docker-build
 docker-build:
