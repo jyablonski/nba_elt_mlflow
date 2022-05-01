@@ -69,7 +69,9 @@ def calculate_win_pct(
                 pd.to_datetime(full_df["proper_date"].drop_duplicates()).values[0]
             ).date()
             if latest_date != datetime.now().date():
-                logging.error("Exiting out, date in tonights_games_ml isn't Today's Date")
+                logging.error(
+                    "Exiting out, date in tonights_games_ml isn't Today's Date"
+                )
                 df = []
                 return df
 
@@ -98,7 +100,6 @@ def calculate_win_pct(
             logging.error("Exiting out, don't have data for Today's Games")
             df = []
             return df
-  
 
     except BaseException as e:
         logging.error(f"Error Occurred, {e}")
