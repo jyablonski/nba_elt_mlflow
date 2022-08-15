@@ -1,6 +1,6 @@
 # ML Pipeline for NBA Dashboard Project
 
-Version: 1.3.4
+Version: 1.3.5
 
 1. Links to other Repos providing infrastructure for this Project
     * [Shiny Server](https://github.com/jyablonski/NBA-Dashboard)
