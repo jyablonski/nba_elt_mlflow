@@ -11,3 +11,4 @@ practice/*.joblib
 logs
 **/*.png
 practice/*.md
+jacobs_notes.md
