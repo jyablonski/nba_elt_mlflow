@@ -1,4 +1,5 @@
 # ML Pipeline for NBA Dashboard Project
+![Tests](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/test_ml.yml/badge.svg) ![Deployment](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/deploy_ml.yml/badge.svg) ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
 Version: 1.3.5
 
@@ -8,3 +9,5 @@ Version: 1.3.5
     * [Terraform](https://github.com/jyablonski/aws_terraform)
     * [Airflow Proof of Concept](https://github.com/jyablonski/nba_elt_airflow)
     * [Python Web Scrape](https://github.com/jyablonski/python_docker)
+    * [GraphQL API](https://github.com/jyablonski/graphql_praq)
+    * [REST API](https://github.com/jyablonski/nba_elt_rest_api)
