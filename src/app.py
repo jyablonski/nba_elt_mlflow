@@ -26,7 +26,15 @@ tonights_games_full = pd.read_sql_query(
 )  # the full df
 
 tonights_games = tonights_games_full.drop(
-    ["home_team", "away_team", "proper_date", "outcome"], axis=1
+    [
+        "home_team",
+        "home_moneyline",
+        "away_team",
+        "away_moneyline",
+        "proper_date",
+        "outcome",
+    ],
+    axis=1,
 )  # i'm just dropping every column not used in ml.
 
 logging.info(f"Loading Logistic Regression model")
