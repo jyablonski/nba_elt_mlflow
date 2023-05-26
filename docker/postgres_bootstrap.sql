@@ -43,9 +43,9 @@ CREATE TABLE IF NOT EXISTS tonights_games_ml
 (
     index bigint,
     home_team text COLLATE pg_catalog."default",
-    home_moneyline numeric,
+    home_moneyline double precision,
     away_team text COLLATE pg_catalog."default",
-    away_moneyline numeric,
+    away_moneyline double precision,
     proper_date text COLLATE pg_catalog."default",
     home_team_rank bigint,
     home_days_rest bigint,
@@ -60,5 +60,7 @@ CREATE TABLE IF NOT EXISTS tonights_games_ml
     away_team_avg_pts_scored_opp double precision,
     away_team_win_pct double precision,
     away_team_win_pct_last10 double precision,
-    away_is_top_players bigint
+    away_is_top_players bigint,
+    home_team_predicted_win_pct double precision,
+    away_team_predicted_win_pct double precision
 );

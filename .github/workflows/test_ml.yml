@@ -1,26 +1,55 @@
-name: Prod Test - PR
+name: REST API Testing
 
 on:
   pull_request:
 
+env:
+  IP: localhost
+  RDS_USER: postgres
+  RDS_PW: postgres
+  RDS_DB: postgres
+  RDS_SCHEMA: nba_prod
+
 jobs:
-  pytest_build:
-    name: Run Pytest 
+  deploy:
+    name: Test Pipeline
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
-      - name: Install Python 3
+      - name: Checkout the Repo
+        uses: actions/checkout@v2
+
+      - name: Install Python 3.9
         uses: actions/setup-python@v1
         with:
-          python-version: 3.8
-      - name: Create and populate log file
-        run: |
-          mkdir logs
-          cat > logs/example.log
-        shell: bash
-      - name: Install dependencies
+          python-version: 3.9
+
+      - name: Install Pipenv
         run: |
           python -m pip install --upgrade pip
-          pip install pandas==1.4.1 pytest==7.0.1 scikit-learn==1.0.2 sqlalchemy==1.4.31
-      - name: Run tests with pytest
-        run: pytest -v
+          pip install pipenv
+      - name: Cache Python 3.9
+        uses: actions/cache@v3
+        with:
+          path: ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-pipenv-${{ hashFiles('Pipfile.lock') }}
+
+      - name: Install Dependencies
+        env:
+          PIPENV_NOSPIN: 'true'
+          WORKON_HOME: ~/.local/share/virtualenvs
+          PIPENV_CACHE_DIR: ~/.local/share/pipcache
+        if: steps.pipenv-cache.outputs.cache-hit != 'true'
+        run: pipenv install --dev
+
+      - name: Start Postgres
+        run: make start-postgres
+
+      - name: Run Tests
+        env:
+          ENV_TYPE: dev
+        run: |
+          pipenv run pytest -v
+
+      - name: Stop Postgres
+        run: make stop-postgres

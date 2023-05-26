@@ -6,20 +6,26 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sqlalchemy import exc, create_engine
+from sqlalchemy.engine.base import Engine
 
 
-def sql_connection(rds_schema: str):
+def sql_connection(
+    rds_schema: str,
+    RDS_USER: str = os.environ.get("RDS_USER"),
+    RDS_PW: str = os.environ.get("RDS_PW"),
+    RDS_IP: str = os.environ.get("IP"),
+    RDS_DB: str = os.environ.get("RDS_DB"),
+) -> Engine:
     """
-    SQL Connection function connecting to my postgres db with schema = nba_source where initial data in ELT lands
+    SQL Connection function to define the SQL Driver + connection variables needed to connect to the DB.
+    This doesn't actually make the connection, use conn.connect() in a context manager to create 1 re-usable connection
+
     Args:
-        None
+        rds_schema (str): The Schema in the DB to connect to.
+
     Returns:
-        SQL Connection variable to schema: nba_source in my PostgreSQL DB
+        SQL Connection variable to a specified schema in my PostgreSQL DB
     """
-    RDS_USER = os.environ.get("RDS_USER")
-    RDS_PW = os.environ.get("RDS_PW")
-    RDS_IP = os.environ.get("IP")
-    RDS_DB = os.environ.get("RDS_DB")
     try:
         connection = create_engine(
             f"postgresql+psycopg2://{RDS_USER}:{RDS_PW}@{RDS_IP}:5432/{RDS_DB}",
@@ -32,7 +38,6 @@ def sql_connection(rds_schema: str):
     except exc.SQLAlchemyError as e:
         logging.error(f"SQL Connection to schema: {rds_schema} Failed, Error: {e}")
         return e
-
 
 def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str):
     """
