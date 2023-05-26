@@ -1,4 +1,4 @@
-name: REST API Testing
+name: ML Pipeline Testing
 
 on:
   pull_request:
