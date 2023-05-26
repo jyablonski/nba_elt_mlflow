@@ -59,3 +59,10 @@ bump-major:
 start-mlflow-server:
 	@mlflow server --backend-store-uri sqlite:///mflow.db --default-artifact-root ./artifacts
 
+.PHONY: start-postgres
+start-postgres:
+	@docker-compose -f docker/docker-compose-postgres.yml up -d
+
+.PHONY: stop-postgres
+stop-postgres:
+	@docker-compose -f docker/docker-compose-postgres.yml down
