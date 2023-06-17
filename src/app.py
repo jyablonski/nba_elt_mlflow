@@ -47,15 +47,6 @@ tonights_games = tonights_games_full.drop(
 logging.info(f"Loading Logistic Regression model")
 clf = load("log_model.joblib")
 
-## 2022-05-01 - pasting this in bc you can alternatively read in the model from S3 rather than keep a local copy.
-
-# import boto3
-# import pickle
-
-# s3 = boto3.resource('s3')
-# clf = pickle.loads(s3.Bucket("jyablonski-mlflow-bucket").Object("8873275a193d4124ba5923568da6fa8e/artifacts/NBA_ELT_PIPELINE_MODEL/model.pkl").get()['Body'].read())
-
-# this function performs the prediction and then joins the rest of the columns back in.
 tonights_games_ml = calculate_win_pct(tonights_games, tonights_games_full, clf)
 
 write_to_sql(conn, "tonights_games_ml", tonights_games_ml, "append")
