@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sqlalchemy import exc, create_engine
-from sqlalchemy.engine.base import Engine
+from sqlalchemy.engine.base import Connection, Engine
 
 
 def sql_connection(
@@ -38,6 +38,7 @@ def sql_connection(
     except exc.SQLAlchemyError as e:
         logging.error(f"SQL Connection to schema: {rds_schema} Failed, Error: {e}")
         return e
+
 
 def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str):
     """
@@ -110,3 +111,24 @@ def calculate_win_pct(
         logging.error(f"Error Occurred, {e}")
         df = []
         return df
+
+
+def get_feature_flags(connection: Connection):
+    flags = pd.read_sql_query(
+        sql="select * from nba_prod.feature_flags;", con=connection
+    )
+
+    print(f"Retrieving {len(flags)} Feature Flags")
+    return flags
+
+
+def check_feature_flag(flag: str, flags_df: pd.DataFrame) -> bool:
+    flags_df = flags_df.query(f"flag == '{flag}'")
+
+    if len(flags_df) > 0 and flags_df["is_enabled"].iloc[0] == 1:
+        print(f"Feature Flag for {flag} is enabled, continuing")
+        return True
+    else:
+        print(f"Feature Flag for {flag} is disabled, skipping")
+        logging.info(f"Feature Flag for {flag} is disabled, skipping")
+        return False

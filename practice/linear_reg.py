@@ -35,14 +35,13 @@ if __name__ == "__main__":
     np.random.seed(40)
 
     # Read the wine-quality csv file from the URL
-    csv_url = (
-        "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
-    )
+    csv_url = "http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
     try:
         data = pd.read_csv(csv_url, sep=";")
     except Exception as e:
         logger.exception(
-            "Unable to download training & test CSV, check your internet connection. Error: %s", e
+            "Unable to download training & test CSV, check your internet connection. Error: %s",
+            e,
         )
 
     # Split the data into training and test sets. (0.75, 0.25) split.
@@ -85,6 +84,8 @@ if __name__ == "__main__":
             # There are other ways to use the Model Registry, which depends on the use case,
             # please refer to the doc for more information:
             # https://mlflow.org/docs/latest/model-registry.html#api-workflow
-            mlflow.sklearn.log_model(lr, "model", registered_model_name="ElasticnetWineModel")
+            mlflow.sklearn.log_model(
+                lr, "model", registered_model_name="ElasticnetWineModel"
+            )
         else:
             mlflow.sklearn.log_model(lr, "model")

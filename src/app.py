@@ -1,10 +1,8 @@
-import datetime
 import logging
 from joblib import load
+import sys
 
-import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
 
 from utils import *
 
@@ -18,6 +16,15 @@ logging.basicConfig(
 logging.info("STARTING NBA ELT MLFLOW Version: 1.4.0")
 
 conn = sql_connection("ml_models")
+
+feature_flags = get_feature_flags(conn)
+
+feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
+
+if feature_flag_bool == False:
+    logging.info(f"Season Feature Flag is disabled, exiting script ...")
+    sys.exit(0)
+
 
 tonights_games_full = pd.read_sql_query(
     "select * from ml_tonights_games", conn

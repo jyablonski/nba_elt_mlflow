@@ -42,3 +42,12 @@ def ml_model():
     fname = os.path.join(os.path.dirname(__file__), "fixtures/log_model.joblib")
     model = load(fname)
     return model
+
+
+@pytest.fixture(scope="session")
+def feature_flags_dataframe():
+    """
+    Fixture to load player stats data from a csv file for testing.
+    """
+    df = pd.DataFrame(data={"flag": ["season", "playoffs"], "is_enabled": [1, 0]})
+    return df
