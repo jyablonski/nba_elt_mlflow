@@ -1,4 +1,5 @@
 CREATE SCHEMA ml_models;
+CREATE SCHEMA nba_prod;
 SET search_path TO ml_models;
 
 -- boostrap script boiiiiiiiii
@@ -64,3 +65,17 @@ CREATE TABLE IF NOT EXISTS tonights_games_ml
     home_team_predicted_win_pct double precision,
     away_team_predicted_win_pct double precision
 );
+
+DROP TABLE IF EXISTS nba_prod.feature_flags;
+CREATE TABLE IF NOT EXISTS nba_prod.feature_flags
+(
+	id serial primary key,
+	flag text,
+	is_enabled integer,
+	created_at timestamp without time zone default now(),
+	modified_at timestamp without time zone default now(),
+    CONSTRAINT flag_unique UNIQUE (flag)
+);
+INSERT INTO nba_prod.feature_flags(flag, is_enabled)
+VALUES ('season', 1),
+       ('playoffs', 0);

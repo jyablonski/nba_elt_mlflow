@@ -1,6 +1,7 @@
 import os
 from random import random, randint
 from mlflow import log_metric, log_param, log_artifacts
+
 # mlflow.autolog()
 
 if __name__ == "__main__":
