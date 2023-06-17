@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import os
 
-import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sqlalchemy import exc, create_engine
