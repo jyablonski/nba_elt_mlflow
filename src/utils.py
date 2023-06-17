@@ -113,7 +113,7 @@ def calculate_win_pct(
         return df
 
 
-def get_feature_flags(connection: Connection):
+def get_feature_flags(connection: Connection) -> pd.DataFrame:
     flags = pd.read_sql_query(
         sql="select * from nba_prod.feature_flags;", con=connection
     )
