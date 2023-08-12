@@ -1,9 +1,18 @@
-name: Prod ML Deploy - ECR
+name: Prod Deploy - ECR
 
 on:
   push:
     branches:
       - master
+
+env:
+  IAM_ROLE: ${{ secrets.IAM_ROLE_ECR }}
+  AWS_REGION : "us-east-1"
+
+# permission can be added at job level or workflow level    
+permissions:
+      id-token: write
+      contents: read    # This is required for actions/checkout
 
 jobs:
   build_image:
@@ -15,13 +24,12 @@ jobs:
       uses: actions/checkout@v2
       if: github.ref == 'refs/heads/master'
 
-    - name: Configure AWS credentials
+    - name: configure aws credentials
       uses: aws-actions/configure-aws-credentials@v1
-      if: github.ref == 'refs/heads/master'
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        role-to-assume: ${{ env.IAM_ROLE }}            # use full arn
+        role-session-name: nba-elt-mlflow-cicd
+        aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
       id: login-ecr
