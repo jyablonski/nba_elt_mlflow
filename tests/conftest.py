@@ -10,8 +10,21 @@ from src.utils import sql_connection
 @pytest.fixture(scope="session")
 def postgres_conn():
     """Fixture to connect to Docker Postgres database"""
-    conn = sql_connection("ml_models", "postgres", "postgres", "localhost", "postgres")
-    yield conn
+    # small override for local + docker testing to work fine
+    if os.environ.get("ENV_TYPE") == "docker_dev":
+        host = "postgres"
+    else:
+        host = "localhost"
+
+    conn = sql_connection(
+        rds_schema="ml_models",
+        rds_user="postgres",
+        rds_pw="postgres",
+        rds_ip=host,
+        rds_db="postgres",
+    )
+    with conn.begin() as conn:
+        yield conn
 
 
 @pytest.fixture(scope="session")

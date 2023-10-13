@@ -4,7 +4,13 @@ import sys
 
 import pandas as pd
 
-from utils import *
+from src.utils import (
+    calculate_win_pct,
+    check_feature_flag,
+    get_feature_flags,
+    sql_connection,
+    write_to_sql,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,7 +19,7 @@ logging.basicConfig(
     handlers=[logging.FileHandler("logs/example.log"), logging.StreamHandler()],
 )
 
-logging.info("STARTING NBA ELT MLFLOW Version: 1.5.1")
+logging.info("STARTING NBA ELT MLFLOW Version: 1.6.0")
 
 conn = sql_connection("ml_models")
 
@@ -21,8 +27,8 @@ feature_flags = get_feature_flags(conn)
 
 feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
 
-if feature_flag_bool == False:
-    logging.info(f"Season Feature Flag is disabled, exiting script ...")
+if feature_flag_bool is False:
+    logging.info("Season Feature Flag is disabled, exiting script ...")
     sys.exit(0)
 
 
@@ -44,7 +50,7 @@ tonights_games = tonights_games_full.drop(
     axis=1,
 )  # i'm just dropping every column not used in ml.
 
-logging.info(f"Loading Logistic Regression model")
+logging.info("Loading Logistic Regression model")
 clf = load("log_model.joblib")
 
 tonights_games_ml = calculate_win_pct(tonights_games, tonights_games_full, clf)

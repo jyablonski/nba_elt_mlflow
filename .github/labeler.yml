@@ -1,0 +1,16 @@
+source_code:
+- src/*
+- tests/*
+
+cd:
+- .github/workflows/deploy.yml
+- docker/*
+
+ci:
+- .github/workflows/test.yml
+
+dependencies:
+- poetry.lock
+
+ml_model:
+- src/log_model.joblib

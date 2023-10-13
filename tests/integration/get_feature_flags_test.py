@@ -18,5 +18,5 @@ def test_get_and_check_feature_flags_postgres(postgres_conn):
     season_check = check_feature_flag(flag="season", flags_df=df)
     playoffs_check = check_feature_flag(flag="playoffs", flags_df=df)
 
-    assert season_check == True
-    assert playoffs_check == False
+    assert season_check is True
+    assert playoffs_check is False
