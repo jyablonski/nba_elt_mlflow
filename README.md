@@ -3,6 +3,22 @@
 
 Version: 1.5.1
 
+## ML Script
+
+The ML Script scrapes from the following sources to extract data and load it to PostgreSQL + S3:
+- basketball-reference
+- DraftKings
+- Reddit Comments
+- Twitter Tweets (RIP Q3 2023)
+
+You'll need to configure your own Database credentials, S3 Bucket, and Reddit API Credentials in order for some of the functionality to work.
+
+## Tests
+To run tests locally, run `make test`.
+
+The same Test Suite is ran after every commit on a PR via GitHub Actions.
+
+## Project
 ![NBA ELT Pipeline Data Flow](https://github.com/jyablonski/nba_elt_mlflow/assets/16946556/c14625e9-c08f-4806-aacc-a22d6f338c81)
 
 1. Links to other Repos providing infrastructure for this Project

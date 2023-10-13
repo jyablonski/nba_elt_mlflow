@@ -5,23 +5,28 @@ lint:
 
 .PHONY: create-venv
 create-venv:
-	pipenv install
+	poetry install
 
 .PHONY: venv
 venv:
-	pipenv shell
+	poetry shell
 
 .PHONY: test
 test:
-	pytest tests/ -v
+	@docker compose -f docker/docker-compose-test.yml down
+	@docker compose -f docker/docker-compose-test.yml up --exit-code-from ml_script_test_runner
 
 .PHONY: docker-build
 docker-build:
-	docker build -t python_docker_local .
+	docker build -f docker/Dockerfile -t ml_script_local .
+
+.PHONY: docker-build-test
+docker-build-test:
+	docker build -f docker/Dockerfile -t ml_script_local .
 
 .PHONY: docker-run
 docker-run:
-	docker run --rm python_docker_local
+	docker run --rm ml_script_local
 
 # use to untrack all files and subsequently retrack all files, using up to date .gitignore
 .PHONY: git-reset
@@ -66,3 +71,9 @@ start-postgres:
 .PHONY: stop-postgres
 stop-postgres:
 	@docker compose -f docker/docker-compose-postgres.yml down
+
+.PHONY: ci-test
+ci-test:
+	@make start-postgres
+	@poetry run pytest --cov --cov-report xml
+	@make stop-postgres

@@ -12,7 +12,7 @@ def test_calculate_win_pct_exit(ml_data, full_df, ml_model):
 
 
 def test_calculate_win_pct_values(ml_data, full_df, ml_model):
-    full_df["proper_date"] = datetime.now().date()
+    full_df["proper_date"] = datetime.utcnow().date()
     df = calculate_win_pct(ml_data, full_df, ml_model)
 
     assert len(df) == 2

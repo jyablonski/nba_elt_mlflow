@@ -47,7 +47,10 @@ def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str):
             logging.info(f"{table_name} is empty, not writing to SQL")
         elif df.schema == "Validated":
             df.to_sql(
-                con=con, name=f"{table_name}", index=False, if_exists=table_type,
+                con=con,
+                name=f"{table_name}",
+                index=False,
+                if_exists=table_type,
             )
             logging.info(
                 f"Writing {len(df)} {table_name} rows to aws_{table_name}_source to SQL"
