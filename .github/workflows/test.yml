@@ -34,8 +34,6 @@ jobs:
           poetry install --with dev --no-root
 
       - name: Create Logs File
-        env:
-          repo_token: ${{ secrets.repo_token }}
         run: |
           mkdir logs
           cat > logs/example.log
