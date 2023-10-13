@@ -32,14 +32,11 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --with dev --no-root
-          poetry run python -m nltk.downloader vader_lexicon
 
-      - name: Create and populate .coveralls.yml file
+      - name: Create Logs File
         env:
           repo_token: ${{ secrets.repo_token }}
         run: |
-          touch .coveralls.yml
-          echo repo_token: "$repo_token" >> .coveralls.yml
           mkdir logs
           cat > logs/example.log
         shell: bash
@@ -48,6 +45,6 @@ jobs:
         run: |
           make ci-test
 
-      - name: Coveralls
-        run: |
-          poetry run coveralls
+      # - name: Coveralls
+      #   run: |
+      #     poetry run coveralls
