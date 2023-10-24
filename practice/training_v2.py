@@ -31,7 +31,7 @@ from src.utils import sql_connection
 # conn = sql_connection('ml_models')
 # past_games = pd.read_sql_query('select * from ml_past_games_odds_analysis;', conn).query(f"outcome.notna()")
 past_games = pd.read_csv("past_games_2023-10-18.csv")
-past_games['outcome'] = past_games['outcome'].replace({'W': 1, 'L': 0})
+past_games["outcome"] = past_games["outcome"].replace({"W": 1, "L": 0})
 
 past_games_outcome = past_games["outcome"]
 
@@ -131,7 +131,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 model = RandomForestClassifier(random_state=42)
 
 # Initialize RFE
-rfe = RFE(model, n_features_to_select=6)  # Select the number of features you want to keep
+rfe = RFE(
+    model, n_features_to_select=6
+)  # Select the number of features you want to keep
 
 # Fit RFE
 fit = rfe.fit(X_train, y_train)
@@ -142,7 +144,11 @@ for feature_rank in zip(past_games_ml_dataset.columns, fit.ranking_):
     print(feature_rank)
 
 # Get the selected features
-selected_features = [feature for feature, rank in zip(past_games_ml_dataset.columns, fit.ranking_) if rank == 1]
+selected_features = [
+    feature
+    for feature, rank in zip(past_games_ml_dataset.columns, fit.ranking_)
+    if rank == 1
+]
 print("\nSelected Features:")
 print(selected_features)
 
@@ -154,19 +160,23 @@ y_pred = model.predict(X_test[selected_features])
 
 # Evaluate the model
 accuracy = accuracy_score(y_test, y_pred)
-print('\nModel Accuracy with Selected Features:', accuracy)
+print("\nModel Accuracy with Selected Features:", accuracy)
 
 ############################### END Random Forest RFE ###########################
 
 ############################### START SVM ###########################
 # Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42
+)
 
 # Create an SVM model
-model = SVC(kernel='linear')  # You can choose different kernels based on your problem
+model = SVC(kernel="linear")  # You can choose different kernels based on your problem
 
 # Initialize RFE
-rfe = RFE(model, n_features_to_select=10)  # Select the number of features you want to keep
+rfe = RFE(
+    model, n_features_to_select=10
+)  # Select the number of features you want to keep
 
 # Fit RFE
 fit = rfe.fit(X_train, y_train)
@@ -177,7 +187,11 @@ for feature_rank in zip(past_games_ml_dataset.columns, fit.ranking_):
     print(feature_rank)
 
 # Get the selected features
-selected_features = [feature for feature, rank in zip(past_games_ml_dataset.columns, fit.ranking_) if rank == 1]
+selected_features = [
+    feature
+    for feature, rank in zip(past_games_ml_dataset.columns, fit.ranking_)
+    if rank == 1
+]
 print("\nSelected Features:")
 print(selected_features)
 
@@ -189,7 +203,7 @@ y_pred = model.predict(X_test[selected_features])
 
 # Evaluate the model
 accuracy = accuracy_score(y_test, y_pred)
-print('\nModel Accuracy with Selected Features:', accuracy)
+print("\nModel Accuracy with Selected Features:", accuracy)
 
 conf_matrix = confusion_matrix(y_test, y_pred)
 classification_rep = classification_report(y_test, y_pred)
@@ -199,14 +213,19 @@ print("Confusion Matrix:\n", conf_matrix)
 ############################### END SVM ###########################
 
 ############################### START Log Regression Ensemble ###########################
-X_train, X_test, y_train, y_test = train_test_split(past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42
+)
 
 logreg_model1 = LogisticRegression(random_state=42)
-logreg_model2 = LogisticRegression(random_state=42) 
+logreg_model2 = LogisticRegression(random_state=42)
 
 voting_classifier = VotingClassifier(
-    estimators=[('logreg1', logreg_model1), ('logreg2', logreg_model2)],  # Add more models if desired
-    voting='soft'  # Use 'soft' for probability-based voting
+    estimators=[
+        ("logreg1", logreg_model1),
+        ("logreg2", logreg_model2),
+    ],  # Add more models if desired
+    voting="soft",  # Use 'soft' for probability-based voting
 )
 
 voting_classifier.fit(X_train, y_train)
@@ -228,18 +247,20 @@ print("Classification Report:\n", classification_rep)
 num_bootstrap_samples = 100  # Adjust as needed
 logreg_models = []
 
-X_train, X_test, y_train, y_test = train_test_split(past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42
+)
 label_encoder = LabelEncoder()
 y_train_encoded = label_encoder.fit_transform(y_train)
 
 for i in range(num_bootstrap_samples):
     # Perform bootstrap sampling (sampling with replacement)
     X_bootstrap, y_bootstrap = resample(X_train, y_train, replace=True, random_state=i)
-    
+
     # Create a binary classification model (e.g., RandomForestClassifier)
     model = LogisticRegression(random_state=42)
     model.fit(X_bootstrap, y_bootstrap)
-    
+
     # Append the trained model to the list
     logreg_models.append(model)
 
@@ -257,4 +278,4 @@ combined_predictions = np.round(np.mean(all_predictions, axis=0))
 
 # Evaluate the combined predictions
 accuracy = accuracy_score(y_test, combined_predictions)
-print('Ensemble Logistic Regression with Bootstrap Accuracy:', accuracy)
+print("Ensemble Logistic Regression with Bootstrap Accuracy:", accuracy)
