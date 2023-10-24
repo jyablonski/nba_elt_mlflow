@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 import os
+import sys
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -70,30 +71,45 @@ def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str) -> Non
         else:
             df.to_sql(
                 con=con,
-                name=f"{table_name}",
+                name=table_name,
                 index=False,
                 if_exists=table_type,
             )
-            logging.info(
-                f"Writing {len(df)} {table_name} rows to aws_{table_name}_source to SQL"
-            )
+            logging.info(f"Writing {len(df)} {table_name} rows to {table_name} to SQL")
     except BaseException as error:
         logging.error(f"SQL Write Script Failed, {error}")
         raise error
 
 
 def calculate_win_pct(
-    ml_df: pd.DataFrame, full_df: pd.DataFrame, ml_model: LogisticRegression
+    full_df: pd.DataFrame, ml_model: LogisticRegression
 ) -> pd.DataFrame:
     """
-    xxx
+    Function to Calculate Win Prediction %s for Upcoming Games
 
     Args:
+        full_df (pd.DataFrame): The Full DataFrame with other variables not
+            needed for the ML Predictions
+
+        ml_model (LogisticRegression): The ML Model loaded from
+            `log_model.joblib`
 
     Returns:
-
+        Pandas DataFrame of ML Predictions to append into `tonights_games_ml`
     """
     try:
+        ml_df = full_df.drop(
+            [
+                "home_team",
+                "home_moneyline",
+                "away_team",
+                "away_moneyline",
+                "proper_date",
+                "outcome",
+            ],
+            axis=1,
+        )
+
         if len(full_df) > 0:
             latest_date = pd.to_datetime(
                 pd.to_datetime(full_df["proper_date"].drop_duplicates()).values[0]
@@ -102,7 +118,7 @@ def calculate_win_pct(
                 logging.error(
                     f"Exiting out, {latest_date} != {datetime.utcnow().date()}"
                 )
-                df = []
+                df = pd.DataFrame()
                 return df
 
             else:
@@ -128,12 +144,12 @@ def calculate_win_pct(
                 return df_final
         else:
             logging.error("Exiting out, don't have data for Today's Games")
-            df = []
+            df = pd.DataFrame()
             return df
 
     except BaseException as e:
         logging.error(f"Error Occurred, {e}")
-        df = []
+        df = pd.DataFrame()
         return df
 
 

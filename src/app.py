@@ -19,12 +19,10 @@ logging.basicConfig(
     handlers=[logging.FileHandler("logs/example.log"), logging.StreamHandler()],
 )
 
-logging.info("STARTING NBA ELT MLFLOW Version: 1.6.0")
+logging.info("STARTING NBA ELT MLFLOW Version: 1.6.1")
 
 conn = sql_connection("ml_models")
-
 feature_flags = get_feature_flags(conn)
-
 feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
 
 if feature_flag_bool is False:
@@ -34,25 +32,10 @@ if feature_flag_bool is False:
 
 tonights_games_full = pd.read_sql_query(
     "select * from ml_tonights_games", conn
-).sort_values(
-    "home_team_avg_pts_scored"
-)  # the full df
+).sort_values("home_team_avg_pts_scored")
+log_regression_model = load("log_model.joblib")
 
-tonights_games = tonights_games_full.drop(
-    [
-        "home_team",
-        "home_moneyline",
-        "away_team",
-        "away_moneyline",
-        "proper_date",
-        "outcome",
-    ],
-    axis=1,
-)  # i'm just dropping every column not used in ml.
-
-logging.info("Loading Logistic Regression model")
-clf = load("log_model.joblib")
-
-tonights_games_ml = calculate_win_pct(tonights_games, tonights_games_full, clf)
-
+tonights_games_ml = calculate_win_pct(
+    full_df=tonights_games_full, ml_model=log_regression_model
+)
 write_to_sql(conn, "tonights_games_ml", tonights_games_ml, "append")
