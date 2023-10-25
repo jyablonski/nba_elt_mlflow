@@ -33,7 +33,7 @@ if feature_flag_bool is False:
 tonights_games_full = pd.read_sql_query(
     "select * from ml_tonights_games", conn
 ).sort_values("home_team_avg_pts_scored")
-log_regression_model = load("log_model.joblib")
+log_regression_model = load("src/log_model.joblib")
 
 tonights_games_ml = calculate_win_pct(
     full_df=tonights_games_full, ml_model=log_regression_model
