@@ -19,7 +19,7 @@ logging.basicConfig(
     handlers=[logging.FileHandler("logs/example.log"), logging.StreamHandler()],
 )
 
-logging.info("STARTING NBA ELT MLFLOW Version: 1.6.1")
+logging.info("STARTING NBA ELT MLFLOW Version: 1.6.2")
 
 conn = sql_connection("ml_models")
 feature_flags = get_feature_flags(conn)
