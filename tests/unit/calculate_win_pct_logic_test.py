@@ -6,7 +6,7 @@ from src.utils import calculate_win_pct
 
 
 def test_calculate_win_pct_exit(full_df, ml_model):
-    full_df["proper_date"] = "2021-01-01"
+    full_df["game_date"] = "2021-01-01"
     df = calculate_win_pct(full_df=full_df, ml_model=ml_model)
 
     assert len(df) == 0
@@ -14,7 +14,7 @@ def test_calculate_win_pct_exit(full_df, ml_model):
 
 
 def test_calculate_win_pct_values(full_df, ml_model):
-    full_df["proper_date"] = datetime.utcnow().date()
+    full_df["game_date"] = datetime.utcnow().date()
     df = calculate_win_pct(full_df=full_df, ml_model=ml_model)
 
     assert len(df) == 2
