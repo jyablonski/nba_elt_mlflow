@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS ml_tonights_games
     away_team text COLLATE pg_catalog."default",
     home_moneyline numeric,
     away_moneyline numeric,
-    proper_date date,
+    game_date date,
     home_team_rank bigint,
     home_days_rest integer,
     home_team_avg_pts_scored numeric,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS ml_tonights_games
     outcome integer
 );
 
-INSERT INTO ml_tonights_games (home_team, away_team, home_moneyline, away_moneyline, proper_date, home_team_rank,
+INSERT INTO ml_tonights_games (home_team, away_team, home_moneyline, away_moneyline, game_date, home_team_rank,
                                home_days_rest, home_team_avg_pts_scored, home_team_avg_pts_scored_opp, home_team_win_pct,
                                home_team_win_pct_last10, home_is_top_players, away_team_rank, away_days_rest,
                                away_team_avg_pts_scored, away_team_avg_pts_scored_opp, away_team_win_pct,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS tonights_games_ml
     home_moneyline double precision,
     away_team text COLLATE pg_catalog."default",
     away_moneyline double precision,
-    proper_date text COLLATE pg_catalog."default",
+    game_date text COLLATE pg_catalog."default",
     home_team_rank bigint,
     home_days_rest bigint,
     home_team_avg_pts_scored double precision,

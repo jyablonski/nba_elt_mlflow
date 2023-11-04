@@ -104,7 +104,7 @@ def calculate_win_pct(
                 "home_moneyline",
                 "away_team",
                 "away_moneyline",
-                "proper_date",
+                "game_date",
                 "outcome",
             ],
             axis=1,
@@ -112,7 +112,7 @@ def calculate_win_pct(
 
         if len(full_df) > 0:
             latest_date = pd.to_datetime(
-                pd.to_datetime(full_df["proper_date"].drop_duplicates()).values[0]
+                pd.to_datetime(full_df["game_date"].drop_duplicates()).values[0]
             ).date()
             if latest_date != datetime.utcnow().date():
                 logging.error(
