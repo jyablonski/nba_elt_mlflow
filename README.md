@@ -1,7 +1,7 @@
 # ML Pipeline for NBA ELT Project
 ![Tests](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/test_ml.yml/badge.svg) ![Deployment](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/deploy_ml.yml/badge.svg) ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
-Version: 1.6.2
+Version: 1.6.3
 
 ## ML Script
 
