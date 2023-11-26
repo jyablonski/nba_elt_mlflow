@@ -15,7 +15,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import ElasticNet, LinearRegression
 from sklearn.utils import resample
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from urllib.parse import urlparse
 import mlflow
 import mlflow.sklearn
@@ -76,6 +76,13 @@ past_games_ml_dataset = pd.get_dummies(
 X_train, X_test, y_train, y_test = train_test_split(
     past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42
 )
+
+
+# Use StandardScaler to normalize the numeric features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
 
 # Create and train the Random Forest model
 random_forest_model = RandomForestClassifier(random_state=42)
@@ -216,6 +223,11 @@ print("Confusion Matrix:\n", conf_matrix)
 X_train, X_test, y_train, y_test = train_test_split(
     past_games_ml_dataset, past_games_outcome, test_size=0.2, random_state=42
 )
+
+# Use StandardScaler to normalize the numeric features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
 logreg_model1 = LogisticRegression(random_state=42)
 logreg_model2 = LogisticRegression(random_state=42)
