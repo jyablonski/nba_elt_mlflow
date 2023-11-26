@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 import os
-import sys
+from typing import Literal
 
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -11,10 +11,10 @@ from sqlalchemy.engine.base import Connection, Engine
 
 def sql_connection(
     rds_schema: str,
-    rds_user: str = os.environ.get("RDS_USER"),
-    rds_pw: str = os.environ.get("RDS_PW"),
-    rds_ip: str = os.environ.get("IP"),
-    rds_db: str = os.environ.get("RDS_DB"),
+    rds_user: str = os.environ.get("RDS_USER", "postgres"),
+    rds_pw: str = os.environ.get("RDS_PW", "postgres"),
+    rds_ip: str = os.environ.get("IP", "postgres"),
+    rds_db: str = os.environ.get("RDS_DB", "postgres"),
 ) -> Engine:
     """
     SQL Connection function to define the SQL Driver + connection
@@ -44,10 +44,15 @@ def sql_connection(
         return engine
     except exc.SQLAlchemyError as e:
         logging.error(f"SQL Engine for {rds_ip}:5432/{rds_db}/{rds_schema} failed, {e}")
-        return e
+        raise e
 
 
-def write_to_sql(con, table_name: str, df: pd.DataFrame, table_type: str) -> None:
+def write_to_sql(
+    con,
+    table_name: str,
+    df: pd.DataFrame,
+    table_type: Literal["fail", "replace", "append"] = "append",
+) -> None:
     """
     SQL Table function to write a pandas data frame in aws_dfname_source format
 
@@ -153,7 +158,7 @@ def calculate_win_pct(
         return df
 
 
-def get_feature_flags(connection: Connection) -> pd.DataFrame:
+def get_feature_flags(connection: Connection | Engine) -> pd.DataFrame:
     flags = pd.read_sql_query(
         sql="select * from nba_prod.feature_flags;", con=connection
     )

@@ -16,6 +16,8 @@ scikit-learn = "^1.3.1"
 black = "^23.9.1"
 pytest = "^7.4.2"
 coveralls = "^3.3.1"
+mypy = "^1.7.1"
+pandas-stubs = "^2.1.1.230928"
 
 
 [tool.poetry.group.local.dependencies]
@@ -34,6 +36,10 @@ markers = [
     "infrastructure: mocks for dummy data (sql db, http endpoint etc)",
 ]
 addopts = "-v"
+
+[tool.mypy]
+ignore_missing_imports = true
+
 
 [tool.ruff]
 extend-exclude = ["practice/"]
