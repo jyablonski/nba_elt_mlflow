@@ -17,7 +17,7 @@ def sql_connection(
     rds_db: str = os.environ.get("RDS_DB", "postgres"),
 ) -> Engine:
     """
-    SQL Connection function to define the SQL Driver + connection
+    SQL Engine function to define the SQL Driver + connection
     variables needed to connect to the DB.
 
     This doesn't actually make the connection, use conn.connect()
@@ -48,7 +48,7 @@ def sql_connection(
 
 
 def write_to_sql(
-    con,
+    con: Connection,
     table_name: str,
     df: pd.DataFrame,
     table_type: Literal["fail", "replace", "append"] = "append",
@@ -163,7 +163,7 @@ def get_feature_flags(connection: Connection | Engine) -> pd.DataFrame:
         sql="select * from nba_prod.feature_flags;", con=connection
     )
 
-    print(f"Retrieving {len(flags)} Feature Flags")
+    logging.info(f"Retrieving {len(flags)} Feature Flags")
     return flags
 
 
@@ -171,7 +171,6 @@ def check_feature_flag(flag: str, flags_df: pd.DataFrame) -> bool:
     flags_df = flags_df.query(f"flag == '{flag}'")
 
     if len(flags_df) > 0 and flags_df["is_enabled"].iloc[0] == 1:
-        print(f"Feature Flag for {flag} is enabled, continuing")
         return True
     else:
         print(f"Feature Flag for {flag} is disabled, skipping")
