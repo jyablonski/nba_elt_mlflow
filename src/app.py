@@ -23,7 +23,7 @@ if __name__ == "__main__":
     logging.info("Starting NBA ELT MLFLOW Version: 1.6.6")
 
     conn = sql_connection("ml_models")
-    with conn.connect() as connection:
+    with conn.begin() as connection:
         feature_flags = get_feature_flags(connection=connection)
         feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
 
