@@ -20,10 +20,10 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
-    logging.info("Starting NBA ELT MLFLOW Version: 1.6.6")
+    logging.info("Starting NBA ELT MLFLOW Version: 1.6.7")
 
     conn = sql_connection("ml_models")
-    with conn.connect() as connection:
+    with conn.begin() as connection:
         feature_flags = get_feature_flags(connection=connection)
         feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
 
@@ -41,4 +41,4 @@ if __name__ == "__main__":
         )
         write_to_sql(con=connection, table_name="tonights_games_ml", df=tonights_games_ml, table_type="append")
     
-    logging.info("Finished NBA ELT MLFLOW Version: 1.6.6")
+    logging.info("Finished NBA ELT MLFLOW Version: 1.6.7")
