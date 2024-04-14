@@ -100,7 +100,7 @@ def calculate_win_pct(
             `log_model.joblib`
 
     Returns:
-        Pandas DataFrame of ML Predictions to append into `tonights_games_ml`
+        Pandas DataFrame of ML Predictions to append into `ml_game_predictions`
     """
     try:
         ml_df = full_df.drop(
