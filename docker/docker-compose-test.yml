@@ -1,23 +1,22 @@
-version: '3'
 services:
   postgres:
     image: postgres:14-alpine
     container_name: postgres
     ports:
-     - 5432:5432
+      - 5432:5432
     environment:
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-     - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     volumes:
       - ${PWD}/docker/postgres_bootstrap.sql:/docker-entrypoint-initdb.d/z99_dump.sql
-    networks: 
+    networks:
       - api_network
 
   ml_script_test_runner:
     build:
-        context: ..
-        dockerfile: docker/Dockerfile.test
+      context: ..
+      dockerfile: docker/Dockerfile.test
     # image: ingestion_script_local
     environment:
       - IP=postgres
@@ -28,7 +27,7 @@ services:
       - ENV_TYPE=docker_dev
     depends_on:
       - postgres
-    networks: 
+    networks:
       - api_network
     links:
       - postgres:postgres
@@ -37,7 +36,6 @@ services:
       - ${PWD}/src/:/home/appuser/src
       - ${PWD}/tests/:/home/appuser/tests
     command: python3 -m pytest -v
-
 
 networks:
   api_network:

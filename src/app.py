@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
-    logging.info("Starting NBA ELT MLFLOW Version: 1.6.7")
+    logging.info("Starting NBA ELT MLFLOW Version: 1.6.8")
 
     conn = sql_connection("ml_models")
     with conn.begin() as connection:
@@ -39,6 +39,6 @@ if __name__ == "__main__":
         tonights_games_ml = calculate_win_pct(
             full_df=tonights_games_full, ml_model=log_regression_model
         )
-        write_to_sql(con=connection, table_name="tonights_games_ml", df=tonights_games_ml, table_type="append")
+        write_to_sql(con=connection, table_name="ml_game_predictions", df=tonights_games_ml, table_type="append")
     
-    logging.info("Finished NBA ELT MLFLOW Version: 1.6.7")
+    logging.info("Finished NBA ELT MLFLOW Version: 1.6.8")

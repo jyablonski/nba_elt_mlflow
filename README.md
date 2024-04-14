@@ -1,7 +1,7 @@
 # ML Pipeline for NBA ELT Project
 ![Tests](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/test.yml/badge.svg) ![Deployment](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/deploy.yml/badge.svg) ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
-Version: 1.6.7
+Version: 1.6.8
 
 ## ML Pipeline
 
@@ -19,7 +19,7 @@ The same Test Suite is ran after every commit on a PR via GitHub Actions.
 
 1. Links to other Repos providing infrastructure for this Project
     * [Dash Server](https://github.com/jyablonski/nba_elt_dashboard)
-    * [Ingestion Script](https://github.com/jyablonski/python_docker)
+    * [Ingestion Script](https://github.com/jyablonski/nba_elt_ingestion)
     * [dbt](https://github.com/jyablonski/nba_elt_dbt)
     * [Terraform](https://github.com/jyablonski/aws_terraform)
     * [REST API](https://github.com/jyablonski/nba_elt_rest_api)
