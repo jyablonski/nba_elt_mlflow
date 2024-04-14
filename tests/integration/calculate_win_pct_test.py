@@ -12,7 +12,7 @@ def test_calculate_win_pct_postgres(postgres_conn, ml_model):
     ).sort_values("home_team_avg_pts_scored")
 
     predictions = calculate_win_pct(full_df=tonights_games_full, ml_model=ml_model)
-    write_to_sql(postgres_conn, "tonights_games_ml", predictions, "append")
+    write_to_sql(postgres_conn, "ml_game_predictions", predictions, "append")
 
     count_check_results_after = pd.read_sql_query(sql=count_check, con=postgres_conn)
 
