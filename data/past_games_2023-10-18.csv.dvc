@@ -1,0 +1,5 @@
+outs:
+- md5: 58effedb21a7ed08ea576a480cb51c6d
+  size: 210284
+  hash: md5
+  path: past_games_2023-10-18.csv
