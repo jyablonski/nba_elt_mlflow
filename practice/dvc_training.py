@@ -46,15 +46,11 @@ clf_svc = SVC(random_state=0).fit(training_set, past_games_outcome)
 clf = LogisticRegression(random_state=0).fit(training_set, past_games_outcome)
 
 
-# Define the directory and filename
 directory = 'data/first_test'
 filename = 'past_games_2023-10-18.joblib'
 full_path = os.path.join(directory, filename)
 
-# Check if the directory exists
 if not os.path.exists(directory):
-    # Create the directory if it does not exist
     os.makedirs(directory)
 
-# Save the object using joblib.dump
 dump(value=clf, filename=full_path)
