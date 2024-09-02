@@ -21,11 +21,10 @@ jobs:
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v2
-      if: github.ref == 'refs/heads/master'
+      uses: actions/checkout@v4
 
     - name: configure aws credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ env.IAM_ROLE }}            # use full arn
         role-session-name: nba-elt-mlflow-cicd
@@ -33,15 +32,13 @@ jobs:
 
     - name: Login to Amazon ECR
       id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-      if: github.ref == 'refs/heads/master'
+      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
-      if: github.ref == 'refs/heads/master'
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: jacobs_repo
         IMAGE_TAG: nba_elt_ml
       run: |
-        docker-compose -f docker/docker-compose.yml build
+        docker compose -f docker/docker-compose.yml build
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
