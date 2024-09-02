@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  first_test:
+    cmd: python practice/dvc_training.py data/past_games_2023-10-18.csv
+    deps:
+    - path: data/past_games_2023-10-18.csv
+      hash: md5
+      md5: 58effedb21a7ed08ea576a480cb51c6d
+      size: 210284
+    - path: practice/dvc_training.py
+      hash: md5
+      md5: 571a97f31dbb37718d6e411b348f31d0
+      size: 1915
+    outs:
+    - path: data/first_test
+      hash: md5
+      md5: 9ffa9ea3c9bce1a01bbba3d301b0734c.dir
+      size: 997
+      nfiles: 1
