@@ -35,7 +35,7 @@ services:
       - ${PWD}/pyproject.toml/:/home/appuser/pyproject.toml
       - ${PWD}/src/:/home/appuser/src
       - ${PWD}/tests/:/home/appuser/tests
-    command: python3 -m pytest -v
+    command: python3 -m pytest -v --color=yes
 
 networks:
   api_network:
