@@ -5,26 +5,26 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
 
 FROM base AS python-deps
 
-COPY docker/install_packages.sh .
-COPY pyproject.toml .
-COPY poetry.lock .
+COPY docker/install_packages.sh . \
+    pyproject.toml . \
+    poetry.lock ./
 
-RUN ./install_packages.sh
-RUN pip install poetry
-RUN poetry install --no-root --with test
+RUN ./install_packages.sh && \
+    pip install poetry && \
+    poetry install --with test
 
 FROM base AS runtime
 
 COPY --from=python-deps ./.venv ./.venv
 ENV PATH="/.venv/bin:$PATH"
 
-RUN useradd --create-home appuser
+RUN useradd --create-home appuser && \
+    mkdir /home/appuser/logs && \
+    touch /home/appuser/logs/example.log
+
 WORKDIR /home/appuser
 USER appuser
 
 COPY src/ ./src
 COPY tests/ ./tests
 COPY pyproject.toml ./pyproject.toml
-
-RUN mkdir logs
-RUN cat > logs/example.log

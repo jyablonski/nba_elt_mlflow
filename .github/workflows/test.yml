@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --with test --no-root
+          poetry install --with test
 
       - name: Create Logs File
         run: |
