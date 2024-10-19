@@ -22,12 +22,12 @@ logging.basicConfig(
 if __name__ == "__main__":
     logging.info("Starting NBA ELT MLFLOW Version: 1.6.9")
 
-    conn = sql_connection("ml_models")
+    conn = sql_connection(rds_schema="ml")
     with conn.begin() as connection:
         feature_flags = get_feature_flags(connection=connection)
         feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
 
-        if feature_flag_bool is False:
+        if not feature_flag_bool:
             logging.info("Season Feature Flag is disabled, exiting script ...")
             sys.exit(0)
 

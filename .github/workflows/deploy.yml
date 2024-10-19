@@ -38,7 +38,7 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: jacobs_repo
-        IMAGE_TAG: nba_elt_ml
+        IMAGE_TAG: nba_elt_pipeline_ml
       run: |
         docker compose -f docker/docker-compose.yml build
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

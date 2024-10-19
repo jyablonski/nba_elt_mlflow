@@ -1,4 +1,4 @@
-FROM python:3.11-slim as base
+FROM python:3.12-slim AS base
 
 ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_NO_INTERACTION=1
