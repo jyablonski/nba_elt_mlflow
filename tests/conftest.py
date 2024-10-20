@@ -17,7 +17,7 @@ def postgres_conn():
         host = "localhost"
 
     conn = sql_connection(
-        rds_schema="ml_models",
+        rds_schema="ml",
         rds_user="postgres",
         rds_pw="postgres",
         rds_ip=host,

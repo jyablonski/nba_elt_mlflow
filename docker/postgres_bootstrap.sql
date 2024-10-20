@@ -1,6 +1,6 @@
-CREATE SCHEMA ml_models;
-CREATE SCHEMA nba_prod;
-SET search_path TO ml_models;
+CREATE SCHEMA ml;
+CREATE SCHEMA marts;
+SET search_path TO ml;
 
 -- boostrap script boiiiiiiiii
 
@@ -67,8 +67,8 @@ CREATE TABLE IF NOT EXISTS ml_game_predictions
     away_team_predicted_win_pct double precision
 );
 
-DROP TABLE IF EXISTS nba_prod.feature_flags;
-CREATE TABLE IF NOT EXISTS nba_prod.feature_flags
+DROP TABLE IF EXISTS marts.feature_flags;
+CREATE TABLE IF NOT EXISTS marts.feature_flags
 (
 	id serial primary key,
 	flag text,
@@ -77,6 +77,6 @@ CREATE TABLE IF NOT EXISTS nba_prod.feature_flags
 	modified_at timestamp without time zone default now(),
     CONSTRAINT flag_unique UNIQUE (flag)
 );
-INSERT INTO nba_prod.feature_flags(flag, is_enabled)
+INSERT INTO marts.feature_flags(flag, is_enabled)
 VALUES ('season', 1),
        ('playoffs', 0);

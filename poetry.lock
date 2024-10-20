@@ -1271,6 +1271,7 @@ files = [
 ]
 
 [package.dependencies]
+setuptools = {version = "*", markers = "python_version >= \"3.12\""}
 urllib3 = ">=1.25"
 
 [package.extras]
@@ -1370,7 +1371,6 @@ dictdiffer = ">=0.8.1"
 diskcache = ">=5.2.1"
 dvc-objects = ">=4.0.1,<6"
 fsspec = ">=2024.2.0"
-funcy = {version = ">=1.14", markers = "python_version < \"3.12\""}
 orjson = {version = ">=3,<4", markers = "implementation_name == \"cpython\""}
 pygtrie = ">=2.3.2"
 sqltrie = ">=0.11.0,<1"
@@ -1413,7 +1413,6 @@ files = [
 
 [package.dependencies]
 fsspec = ">=2024.2.0"
-funcy = {version = ">=1.14", markers = "python_version < \"3.12\""}
 
 [package.extras]
 dev = ["dvc-objects[tests]", "mypy (==1.8.0)"]
@@ -2144,7 +2143,6 @@ prompt-toolkit = ">=3.0.41,<3.1.0"
 pygments = ">=2.4.0"
 stack-data = "*"
 traitlets = ">=5.13.0"
-typing-extensions = {version = ">=4.6", markers = "python_version < \"3.12\""}
 
 [package.extras]
 all = ["ipython[black,doc,kernel,matplotlib,nbconvert,nbformat,notebook,parallel,qtconsole]", "ipython[test,test-extra]"]
@@ -3155,7 +3153,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.23.2", markers = "python_version == \"3.11\""}
+numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
 tzdata = ">=2022.7"
@@ -3637,7 +3635,10 @@ files = [
 [package.dependencies]
 annotated-types = ">=0.4.0"
 pydantic-core = "2.20.1"
-typing-extensions = {version = ">=4.6.1", markers = "python_version < \"3.13\""}
+typing-extensions = [
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
+    {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+]
 
 [package.extras]
 email = ["email-validator (>=2.0.0)"]
@@ -5083,5 +5084,5 @@ type = ["pytest-mypy"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.11, <3.12"
-content-hash = "195813c093e9a66b758ece21bb408b7161a703a1b99eb328e2fd46aea0b6a632"
+python-versions = "^3.12"
+content-hash = "6bf5181b70b671ac29cd7149185945707d2cb533fb09765aa7bf8b76624f0824"

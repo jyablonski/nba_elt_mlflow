@@ -5,7 +5,7 @@ from src.utils import calculate_win_pct, write_to_sql
 
 def test_calculate_win_pct_postgres(postgres_conn, ml_model):
     ml_post_prediction_table = "ml_game_predictions"
-    count_check = f"SELECT count(*) FROM ml_models.{ml_post_prediction_table}"
+    count_check = f"SELECT count(*) FROM ml.{ml_post_prediction_table}"
     count_check_results_before = pd.read_sql_query(sql=count_check, con=postgres_conn)
 
     tonights_games_full = pd.read_sql_query(

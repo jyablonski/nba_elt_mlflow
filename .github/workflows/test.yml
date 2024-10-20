@@ -4,9 +4,8 @@ on:
   pull_request:
 
 env:
-  PYTHON_VERSION: "3.11"
-  POETRY_VERSION: "1.6.1"
-
+  PYTHON_VERSION: "3.12"
+  POETRY_VERSION: "1.8.3"
 
 jobs:
   pytest_build:
@@ -21,7 +20,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry==${{ env.POETRY_VERSION }}
 
-      - name: Install Python 3.11
+      - name: Install Python
         uses: actions/setup-python@v4
         id: setup_python
         with:
@@ -31,7 +30,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install --with test --no-root
+          poetry install --with test
 
       - name: Create Logs File
         run: |
