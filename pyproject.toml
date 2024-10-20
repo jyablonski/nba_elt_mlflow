@@ -33,6 +33,10 @@ mlflow = "^2.7.1"
 ruff = "^0.0.292"
 dvc = {extras = ["s3"], version = "^3.55.2"}
 
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
 [tool.pytest.ini_options]
 filterwarnings = ["ignore::DeprecationWarning"]
 testpaths = ["tests"]
