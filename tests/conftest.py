@@ -1,10 +1,9 @@
 from joblib import load
 import os
 
+from jyablonski_common_modules.sql import create_sql_engine
 import pandas as pd
 import pytest
-
-from src.utils import sql_connection
 
 
 @pytest.fixture(scope="session")
@@ -16,14 +15,16 @@ def postgres_conn():
     else:
         host = "localhost"
 
-    conn = sql_connection(
-        rds_schema="ml",
-        rds_user="postgres",
-        rds_pw="postgres",
-        rds_ip=host,
-        rds_db="postgres",
+    engine = create_sql_engine(
+        user="postgres",
+        password="postgres",
+        host=host,
+        database="postgres",
+        schema="ml",
+        port=5432,
     )
-    with conn.begin() as conn:
+
+    with engine.begin() as conn:
         yield conn
 
 

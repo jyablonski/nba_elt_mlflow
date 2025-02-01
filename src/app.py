@@ -1,34 +1,36 @@
-import logging
 from joblib import load
+import os
 import sys
 
+from jyablonski_common_modules.logging import create_logger
+from jyablonski_common_modules.sql import create_sql_engine, write_to_sql_upsert
 import pandas as pd
 
 from src.utils import (
     calculate_win_pct,
     check_feature_flag,
     get_feature_flags,
-    sql_connection,
-    write_to_sql,
-)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(levelname)s] %(asctime)s %(message)s",
-    datefmt="%Y-%m-%d %I:%M:%S %p",
-    handlers=[logging.StreamHandler()],
 )
 
 if __name__ == "__main__":
-    logging.info("Starting NBA ELT MLFLOW Version: 1.7.0")
+    logger = create_logger()
+    logger.info("Starting NBA ELT MLFLOW Version: 1.7.0")
+    ml_schema = "ml"
 
-    conn = sql_connection(rds_schema="ml")
-    with conn.begin() as connection:
+    engine = create_sql_engine(
+        user=os.environ.get("RDS_USER", default="default"),
+        password=os.environ.get("RDS_PW", default="default"),
+        host=os.environ.get("IP", "postgres"),
+        database=os.environ.get("RDS_DB", default="default"),
+        schema=ml_schema,
+        port=os.environ.get("RDS_PORT", default=5432),
+    )
+    with engine.begin() as connection:
         feature_flags = get_feature_flags(connection=connection)
         feature_flag_bool = check_feature_flag(flag="season", flags_df=feature_flags)
 
         if not feature_flag_bool:
-            logging.info("Season Feature Flag is disabled, exiting script ...")
+            logger.info("Season Feature Flag is disabled, exiting script ...")
             sys.exit(0)
 
         tonights_games_full = pd.read_sql_query(
@@ -39,6 +41,13 @@ if __name__ == "__main__":
         tonights_games_ml = calculate_win_pct(
             full_df=tonights_games_full, ml_model=log_regression_model
         )
-        write_to_sql(con=connection, table_name="ml_game_predictions", df=tonights_games_ml, table_type="append")
-    
-    logging.info("Finished NBA ELT MLFLOW Version: 1.7.0")
+
+        write_to_sql_upsert(
+            conn=connection,
+            table="ml_game_predictions",
+            schema=ml_schema,
+            df=tonights_games_ml,
+            primary_keys=["home_team", "game_date"],
+        )
+
+    logger.info("Finished NBA ELT MLFLOW Version: 1.7.0")

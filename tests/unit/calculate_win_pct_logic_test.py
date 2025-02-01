@@ -18,6 +18,6 @@ def test_calculate_win_pct_values(full_df, ml_model):
     df = calculate_win_pct(full_df=full_df, ml_model=ml_model)
 
     assert len(df) == 2
-    assert len(df.columns) == 22
+    assert len(df.columns) == 21
     assert min(df["away_team_predicted_win_pct"]) == 0.265
     assert max(df["home_team_predicted_win_pct"]) == 0.735

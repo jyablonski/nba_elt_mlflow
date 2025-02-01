@@ -22,7 +22,7 @@ docker-build:
 
 .PHONY: docker-build-test
 docker-build-test:
-	docker build -f docker/Dockerfile -t ml_script_local .
+	docker build -f docker/Dockerfile.test -t ml_script_local_test .
 
 .PHONY: docker-run
 docker-run:
