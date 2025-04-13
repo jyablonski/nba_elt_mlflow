@@ -14,7 +14,7 @@ from src.utils import (
 
 if __name__ == "__main__":
     logger = create_logger()
-    logger.info("Starting NBA ELT MLFLOW Version: 1.7.0")
+    logger.info("Starting NBA ELT MLFLOW Version: 1.8.0")
     ml_schema = "ml"
 
     engine = create_sql_engine(
@@ -50,4 +50,4 @@ if __name__ == "__main__":
             primary_keys=["home_team", "game_date"],
         )
 
-    logger.info("Finished NBA ELT MLFLOW Version: 1.7.0")
+    logger.info("Finished NBA ELT MLFLOW Version: 1.8.0")
