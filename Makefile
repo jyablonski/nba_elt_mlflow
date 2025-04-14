@@ -75,5 +75,5 @@ stop-postgres:
 .PHONY: ci-test
 ci-test:
 	@make start-postgres
-	@poetry run pytest
+	@uv run pytest
 	@make stop-postgres
