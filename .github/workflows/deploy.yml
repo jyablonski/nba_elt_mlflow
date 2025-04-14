@@ -1,4 +1,4 @@
-name: Prod Deploy - ECR
+name: CD Pipeline
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
       contents: read    # This is required for actions/checkout
 
 jobs:
-  build_image:
+  cd_pipeline:
     name: Deploy Docker Image to ECR
     runs-on: ubuntu-latest
 
