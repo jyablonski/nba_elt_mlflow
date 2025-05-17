@@ -7,38 +7,40 @@ on:
 
 env:
   IAM_ROLE: ${{ secrets.IAM_ROLE_ECR }}
-  AWS_REGION : "us-east-1"
+  AWS_REGION: "us-east-1"
 
-# permission can be added at job level or workflow level    
 permissions:
-      id-token: write
-      contents: read    # This is required for actions/checkout
+  id-token: write
+  contents: read # This is required for actions/checkout
 
 jobs:
   cd_pipeline:
-    name: Deploy Docker Image to ECR
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && success()
     steps:
-    - name: Check out code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: configure aws credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ env.IAM_ROLE }}            # use full arn
-        role-session-name: nba-elt-mlflow-cicd
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Build and Push Docker Image to ECR
+        uses: jyablonski/actions/deploy@v1
+        with:
+          role-to-assume: ${{ env.IAM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          ecr-repo: jacobs_repo
+          image-name: nba_elt_pipeline_ml
+          dockerfile: docker/Dockerfile
+          context: .
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+  deploy-alert:
+    needs: cd_pipeline
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: jacobs_repo
-        IMAGE_TAG: nba_elt_pipeline_ml
-      run: |
-        docker compose -f docker/docker-compose.yml build
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Slack Deploy Notification
+        uses: jyablonski/actions/slack_alert@v1
+        with:
+          message: ${{ job.status == 'success' && 'ML Pipeline Deployed to Production' || 'ML Pipeline Failed to deploy properly' }}
+          title: ${{ job.status == 'success' && 'ML Pipeline Deploy Pipeline' || 'ML Pipeline Deploy Failure' }}
+          color: ${{ job.status == 'success' && 'good' || 'danger' }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}

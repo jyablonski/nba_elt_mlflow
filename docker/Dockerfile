@@ -16,10 +16,16 @@ RUN apt-get update && \
 # -------------------------------
 FROM base AS python-deps
 
+ARG INSTALL_DEV_DEPENDENCIES=false
+
 COPY pyproject.toml uv.lock ./
 
 RUN pip install uv==0.6.12 && \
-    uv sync --frozen --no-dev
+    if [ "$INSTALL_DEV_DEPENDENCIES" = "true" ]; then \
+        uv sync --frozen; \
+    else \
+        uv sync --frozen --no-dev; \
+    fi
 
 # -------------------------------
 # Stage: Runtime

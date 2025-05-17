@@ -16,7 +16,9 @@ services:
   ml_script_test_runner:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.test
+      dockerfile: docker/Dockerfile
+      args:
+        INSTALL_DEV_DEPENDENCIES: "true"
     # image: ingestion_script_local
     environment:
       - IP=postgres
