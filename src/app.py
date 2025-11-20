@@ -15,7 +15,7 @@ from src.utils import (
 if __name__ == "__main__":
     logger = create_logger()
     logger.info("Starting NBA ELT MLFLOW Version: 1.8.1")
-    ml_schema = "ml"
+    ml_schema = "silver"
 
     engine = create_sql_engine(
         user=os.environ.get("RDS_USER", default="default"),

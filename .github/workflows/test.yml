@@ -5,7 +5,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
-  UV_VERSION: "0.6.12"
+  UV_VERSION: "0.9.10"
 
 jobs:
   ci_pipeline:

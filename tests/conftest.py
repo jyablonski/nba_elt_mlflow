@@ -20,7 +20,7 @@ def postgres_conn():
         password="postgres",
         host=host,
         database="postgres",
-        schema="ml",
+        schema="silver",
         port=5432,
     )
 
