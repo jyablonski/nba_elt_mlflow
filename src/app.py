@@ -1,17 +1,16 @@
 import os
 import sys
 
-from joblib import load
 from jyablonski_common_modules.logging import create_logger
-from jyablonski_common_modules.sql import create_sql_engine, write_to_sql_upsert
-import pandas as pd
+from jyablonski_common_modules.sql import create_sql_engine
 
 from src.utils import (
-    calculate_win_pct,
     check_feature_flag,
     get_feature_flags,
-    INPUT_ML_TABLE,
-    OUTPUT_ML_TABLE,
+    load_ml_model,
+    pull_tonights_games,
+    generate_win_predictions,
+    write_predictions_to_database,
 )
 
 SOURCE_SCHEMA = "silver"
@@ -34,48 +33,38 @@ def main():
     )
 
     with engine.begin() as connection:
-        # check feature flag
+        # Check feature flag
         feature_flags = get_feature_flags(
             connection=connection, schema=DESTINATION_SCHEMA
         )
 
-        # exit if feature flag is disabled
         if not check_feature_flag(flag="season", flags_df=feature_flags):
             logger.info("Season feature flag is disabled, exiting script")
             sys.exit(0)
 
-        # Load data and model
-        tonights_games = pd.read_sql_query(
-            sql=f"select * from {SOURCE_SCHEMA}.{INPUT_ML_TABLE}", con=connection
-        ).sort_values("home_team_avg_pts_scored")
+        tonights_games = pull_tonights_games(
+            connection=connection, schema=SOURCE_SCHEMA, logger=logger
+        )
 
         if tonights_games.empty:
             logger.warning("No games found for prediction, exiting script")
             sys.exit(0)
 
-        model = load(MODEL_PATH)
-        logger.info(f"Loaded model from {MODEL_PATH}")
+        model = load_ml_model(model_path=MODEL_PATH, logger=logger)
 
-        # generate predictions
-        predictions = calculate_win_pct(
-            full_df=tonights_games, ml_model=model, logger=logger
+        predictions = generate_win_predictions(
+            games_df=tonights_games, ml_model=model, logger=logger
         )
 
-        # exit if there are no predictions, or no games today
         if predictions.empty:
             logger.warning("No predictions generated, exiting script")
             sys.exit(0)
 
-        # write predictions to database
-        write_to_sql_upsert(
-            conn=connection,
-            table=OUTPUT_ML_TABLE,
+        write_predictions_to_database(
+            connection=connection,
+            predictions_df=predictions,
             schema=DESTINATION_SCHEMA,
-            df=predictions,
-            primary_keys=["home_team", "game_date"],
-        )
-        logger.info(
-            f"Successfully wrote {len(predictions)} predictions to {DESTINATION_SCHEMA}.{OUTPUT_ML_TABLE}"
+            logger=logger,
         )
 
     logger.info("Finished NBA ELT ML Pipeline")

@@ -37,7 +37,7 @@ services:
       - ${PWD}/pyproject.toml/:/home/appuser/pyproject.toml
       - ${PWD}/src/:/home/appuser/src
       - ${PWD}/tests/:/home/appuser/tests
-    command: python3 -m pytest -v --color=yes
+    command: python3 -m pytest -vv --cov-report term --cov-report xml:coverage.xml --cov=src --color=yes
 
 networks:
   api_network:
