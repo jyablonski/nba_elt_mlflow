@@ -15,14 +15,18 @@ from src.utils import (
 if __name__ == "__main__":
     logger = create_logger()
     logger.info("Starting NBA ELT MLFLOW Version: 1.8.1")
-    ml_schema = "silver"
+
+    # source data is pulled from silver layer and inserted into gold layer.
+    # this is for simplicity so the downstream services only need read-only access on the gold layer
+    source_ml_schema = "silver"
+    destination_ml_schema = "gold"
 
     engine = create_sql_engine(
         user=os.environ.get("RDS_USER", default="default"),
         password=os.environ.get("RDS_PW", default="default"),
         host=os.environ.get("IP", "postgres"),
         database=os.environ.get("RDS_DB", default="default"),
-        schema=ml_schema,
+        schema=source_ml_schema,
         port=os.environ.get("RDS_PORT", default=5432),
     )
     with engine.begin() as connection:
@@ -45,7 +49,7 @@ if __name__ == "__main__":
         write_to_sql_upsert(
             conn=connection,
             table="ml_game_predictions",
-            schema=ml_schema,
+            schema=destination_ml_schema,
             df=tonights_games_ml,
             primary_keys=["home_team", "game_date"],
         )

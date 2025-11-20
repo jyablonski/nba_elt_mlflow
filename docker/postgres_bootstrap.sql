@@ -40,8 +40,8 @@ VALUES ('Boston Celtics', 'Chicago Bulls', '-160', '200', current_date, 8, 3, 11
 	   ('Golden State Warriors','Phoenix Suns','-160.0','130.0',current_date,12,164,118.1,116.5,0.537,0.8,2.0,10,165,113.7,112.2,0.549,0.7,2.0,NULL);
 
 -- table that the ml pipeline writes predictions to 
-DROP TABLE IF EXISTS ml_game_predictions;
-CREATE TABLE IF NOT EXISTS ml_game_predictions
+DROP TABLE IF EXISTS gold.ml_game_predictions;
+CREATE TABLE IF NOT EXISTS gold.ml_game_predictions
 (
     index bigint,
     home_team text COLLATE pg_catalog."default",
