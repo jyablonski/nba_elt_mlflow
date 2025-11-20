@@ -43,18 +43,16 @@ def main():
             sys.exit(0)
 
         tonights_games = pull_tonights_games(
-            connection=connection, schema=SOURCE_SCHEMA, logger=logger
+            connection=connection, schema=SOURCE_SCHEMA
         )
 
         if tonights_games.empty:
             logger.warning("No games found for prediction, exiting script")
             sys.exit(0)
 
-        model = load_ml_model(model_path=MODEL_PATH, logger=logger)
+        model = load_ml_model(model_path=MODEL_PATH)
 
-        predictions = generate_win_predictions(
-            games_df=tonights_games, ml_model=model, logger=logger
-        )
+        predictions = generate_win_predictions(games_df=tonights_games, ml_model=model)
 
         if predictions.empty:
             logger.warning("No predictions generated, exiting script")
@@ -64,7 +62,6 @@ def main():
             connection=connection,
             predictions_df=predictions,
             schema=DESTINATION_SCHEMA,
-            logger=logger,
         )
 
     logger.info("Finished NBA ELT ML Pipeline")
