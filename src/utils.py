@@ -1,6 +1,5 @@
 from datetime import datetime
 import logging
-from typing import Optional
 
 from joblib import load
 import pandas as pd
