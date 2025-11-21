@@ -30,17 +30,13 @@ jobs:
           dockerfile: docker/Dockerfile
           context: .
 
-  deploy-alert:
-    needs: cd_pipeline
+  notify:
+    needs: [cd_pipeline]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Slack Deploy Notification
-        uses: jyablonski/actions/slack_alert@v1
+      - name: Slack Alert
+        uses: jyablonski/actions/alert@v1
         with:
-          message: ${{ job.status == 'success' && 'ML Pipeline Deployed to Production' || 'ML Pipeline Failed to deploy properly' }}
-          title: ${{ job.status == 'success' && 'ML Pipeline Deploy Pipeline' || 'ML Pipeline Deploy Failure' }}
-          color: ${{ job.status == 'success' && 'good' || 'danger' }}
+          status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
           webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
