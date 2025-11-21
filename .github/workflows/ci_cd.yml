@@ -1,0 +1,72 @@
+name: CI / CD Pipeline
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+env:
+  IAM_ROLE: ${{ secrets.IAM_ROLE_ECR }}
+  AWS_REGION: "us-east-1"
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  UV_VERSION: "0.9.10"
+
+permissions:
+  id-token: write
+  contents: read # This is required for actions/checkout
+
+jobs:
+  ci_pipeline:
+    name: Test Pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the Repo
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Create Logs File
+        run: |
+          mkdir logs
+          touch logs/example.log
+        shell: bash
+
+      - name: Run Tests
+        run: |
+          make ci-test
+
+      - name: Coveralls
+        run: uv run coveralls
+
+  cd_pipeline:
+    needs: [ci_pipeline]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and Push Docker Image to ECR
+        uses: jyablonski/actions/deploy@v1
+        with:
+          role-to-assume: ${{ env.IAM_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+          ecr-repo: jacobs_repo
+          image-name: nba_elt_pipeline_ml
+          dockerfile: docker/Dockerfile
+          context: .
+
+  notify:
+    needs: [cd_pipeline]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Alert
+        uses: jyablonski/actions/alert@v1
+        with:
+          status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
