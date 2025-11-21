@@ -26,5 +26,5 @@ stop-postgres:
 .PHONY: ci-test
 ci-test:
 	@make start-postgres
-	@uv run pytest
+	@uv run pytest -vv --cov-report term --cov-report xml:coverage.xml --cov=src --color=yes
 	@make stop-postgres
