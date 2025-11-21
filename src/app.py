@@ -33,7 +33,6 @@ def main():
     )
 
     with engine.begin() as connection:
-        # Check feature flag
         feature_flags = get_feature_flags(
             connection=connection, schema=DESTINATION_SCHEMA
         )
