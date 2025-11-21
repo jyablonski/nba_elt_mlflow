@@ -31,6 +31,5 @@ jobs:
         run: |
           make ci-test
 
-      # - name: Coveralls
-      #   run: |
-      #     poetry run coveralls
+      - name: Coveralls
+        run: uv run coveralls
