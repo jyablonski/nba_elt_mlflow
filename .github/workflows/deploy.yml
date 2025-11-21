@@ -8,7 +8,6 @@ on:
 env:
   IAM_ROLE: ${{ secrets.IAM_ROLE_ECR }}
   AWS_REGION: "us-east-1"
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 permissions:
   id-token: write
