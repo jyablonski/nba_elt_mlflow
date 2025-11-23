@@ -18,14 +18,13 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 
-from ml_experiments.config import FEATURE_COLUMNS, TARGET_COLUMN
+from ml_experiments.config import TARGET_COLUMN
 from ml_experiments.data_generator import SyntheticDataGenerator
 from ml_experiments.feature_engineering import FeatureEngineer
 from ml_experiments.models import ModelFactory, create_recommended_models
-from ml_experiments.evaluation import ModelEvaluator, calculate_baseline_accuracy
+from ml_experiments.evaluation import calculate_baseline_accuracy
 from ml_experiments.training_pipeline import TrainingPipeline
 from ml_experiments.model_comparison import ModelComparison
 

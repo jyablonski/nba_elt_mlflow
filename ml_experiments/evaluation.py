@@ -5,7 +5,7 @@ Provides comprehensive metrics and evaluation methods for
 comparing model performance.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
@@ -20,8 +20,6 @@ from sklearn.metrics import (
     brier_score_loss,
     confusion_matrix,
     classification_report,
-    precision_recall_curve,
-    roc_curve,
 )
 from sklearn.calibration import calibration_curve
 from sklearn.model_selection import cross_val_score, cross_val_predict
@@ -168,7 +166,6 @@ class ModelEvaluator:
         Returns:
             EvaluationMetrics with cross-validated scores
         """
-        from sklearn.base import clone
 
         # Cross-validation scores
         cv_accuracy = cross_val_score(model, X, y, cv=cv, scoring="accuracy")

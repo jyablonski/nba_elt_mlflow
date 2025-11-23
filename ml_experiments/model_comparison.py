@@ -16,7 +16,6 @@ from sklearn.model_selection import (
     cross_val_score,
     StratifiedKFold,
     learning_curve,
-    validation_curve,
 )
 from scipy import stats
 
@@ -26,7 +25,6 @@ from ml_experiments.evaluation import (
     EvaluationMetrics,
     calculate_baseline_accuracy,
 )
-from ml_experiments.training_pipeline import TrainingResult
 
 
 @dataclass

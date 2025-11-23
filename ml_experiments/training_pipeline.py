@@ -24,12 +24,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from ml_experiments.config import (
-    FEATURE_COLUMNS,
     TARGET_COLUMN,
     METADATA_COLUMNS,
-    MODEL_CONFIGS,
-    CV_CONFIG,
-    TRAINING_CONFIG,
 )
 from ml_experiments.feature_engineering import FeatureEngineer
 from ml_experiments.models import ModelFactory
