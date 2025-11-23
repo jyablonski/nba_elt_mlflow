@@ -4,16 +4,16 @@ This package provides comprehensive ML experimentation capabilities for NBA game
 
 ## Package Structure
 
-| File | Description |
-|------|-------------|
-| `config.py` | Feature definitions, model configurations, and hyperparameter search spaces for 10+ models |
-| `data_generator.py` | Synthetic data generation for training augmentation and testing |
-| `feature_engineering.py` | Feature transformations, derived features, scaling, and feature selection |
-| `models.py` | Model factory with dynamic instantiation, voting/stacking ensembles |
-| `evaluation.py` | Comprehensive metrics (accuracy, ROC AUC, Brier score, calibration error) |
-| `training_pipeline.py` | End-to-end training with cross-validation and hyperparameter tuning |
-| `model_comparison.py` | Multi-model benchmarking, statistical significance tests, production readiness checks |
-| `run_experiments.py` | CLI entry point for running experiments |
+| File                     | Description                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `config.py`              | Feature definitions, model configurations, and hyperparameter search spaces for 10+ models |
+| `data_generator.py`      | Synthetic data generation for training augmentation and testing                            |
+| `feature_engineering.py` | Feature transformations, derived features, scaling, and feature selection                  |
+| `models.py`              | Model factory with dynamic instantiation, voting/stacking ensembles                        |
+| `evaluation.py`          | Comprehensive metrics (accuracy, ROC AUC, Brier score, calibration error)                  |
+| `training_pipeline.py`   | End-to-end training with cross-validation and hyperparameter tuning                        |
+| `model_comparison.py`    | Multi-model benchmarking, statistical significance tests, production readiness checks      |
+| `run_experiments.py`     | CLI entry point for running experiments                                                    |
 
 ## Quick Start
 
@@ -77,41 +77,41 @@ print(comparison.generate_comparison_report(result))
 
 ## Available Models
 
-| Model | Requires Scaling | Notes |
-|-------|------------------|-------|
-| Logistic Regression | Yes | Good baseline, interpretable |
-| Random Forest | No | Handles non-linear patterns |
-| Gradient Boosting | No | Often best performer |
-| Extra Trees | No | Fast, good for feature importance |
-| XGBoost* | No | State-of-the-art boosting |
-| LightGBM* | No | Fast gradient boosting |
-| SVM | Yes | Good with proper tuning |
-| MLP (Neural Network) | Yes | Can capture complex patterns |
-| K-Nearest Neighbors | Yes | Simple, interpretable |
-| Naive Bayes | No | Fast baseline |
+| Model                | Requires Scaling | Notes                             |
+| -------------------- | ---------------- | --------------------------------- |
+| Logistic Regression  | Yes              | Good baseline, interpretable      |
+| Random Forest        | No               | Handles non-linear patterns       |
+| Gradient Boosting    | No               | Often best performer              |
+| Extra Trees          | No               | Fast, good for feature importance |
+| XGBoost\*            | No               | State-of-the-art boosting         |
+| LightGBM\*           | No               | Fast gradient boosting            |
+| SVM                  | Yes              | Good with proper tuning           |
+| MLP (Neural Network) | Yes              | Can capture complex patterns      |
+| K-Nearest Neighbors  | Yes              | Simple, interpretable             |
+| Naive Bayes          | No               | Fast baseline                     |
 
-*Requires optional dependencies: `uv sync --group ml-experiments`
+\*Requires optional dependencies: `uv sync --group ml-experiments`
 
 ## Understanding the Output
 
 ### Key Metrics
 
-| Metric | Range | Goal | Description |
-|--------|-------|------|-------------|
-| ROC AUC | 0.5-1.0 | Higher | Overall discriminative ability |
-| Accuracy | 0-1.0 | Higher | Correct predictions / total |
-| Brier Score | 0-1.0 | Lower | Probability calibration quality |
-| Calibration Error | 0-1.0 | Lower | How well probabilities match reality |
-| CV Std | 0+ | Lower | Model stability across folds |
+| Metric            | Range   | Goal   | Description                          |
+| ----------------- | ------- | ------ | ------------------------------------ |
+| ROC AUC           | 0.5-1.0 | Higher | Overall discriminative ability       |
+| Accuracy          | 0-1.0   | Higher | Correct predictions / total          |
+| Brier Score       | 0-1.0   | Lower  | Probability calibration quality      |
+| Calibration Error | 0-1.0   | Lower  | How well probabilities match reality |
+| CV Std            | 0+      | Lower  | Model stability across folds         |
 
 ### Realistic Targets for NBA Prediction
 
-| Level | Accuracy | ROC AUC |
-|-------|----------|---------|
-| Random | 50% | 0.50 |
-| Baseline (majority class) | ~55% | 0.55 |
-| Good Model | 55-58% | 0.58-0.62 |
-| Excellent | 60%+ | 0.65+ |
+| Level                     | Accuracy | ROC AUC   |
+| ------------------------- | -------- | --------- |
+| Random                    | 50%      | 0.50      |
+| Baseline (majority class) | ~55%     | 0.55      |
+| Good Model                | 55-58%   | 0.58-0.62 |
+| Excellent                 | 60%+     | 0.65+     |
 
 ## Next Steps: Features to Add
 
