@@ -18,7 +18,6 @@ OUTPUT_TABLE_V2 = "ml_game_predictions_v2"
 @pytest.fixture(autouse=True)
 def cleanup_v2_predictions(postgres_conn):
     """Clean up V2 predictions table before and after each test."""
-    # We assume the table exists thanks to the bootstrap script
     cleanup_sql = text(f"TRUNCATE TABLE {DESTINATION_SCHEMA}.{OUTPUT_TABLE_V2}")
 
     postgres_conn.execute(cleanup_sql)
@@ -36,13 +35,10 @@ def test_pull_tonights_games_v2(postgres_conn):
     )
 
     assert not games.empty
-    # Verify new V2 schema columns exist
     assert "home_active_vorp" in games.columns
-    assert (
-        "home_fatigue_index" not in games.columns
-    )  # Should be raw, not engineered yet
+    assert "home_fatigue_index" not in games.columns
     assert "home_travel_miles_last_7_days" in games.columns
-    assert len(games) >= 8  # Based on your INSERT statement
+    assert len(games) >= 8
 
 
 def test_generate_win_predictions_v2(postgres_conn, v2_artifacts):
@@ -61,11 +57,9 @@ def test_generate_win_predictions_v2(postgres_conn, v2_artifacts):
     # 3. Assertions
     assert not predictions.empty
     assert len(predictions) == len(games)
-
-    # Check Logic
     assert predictions["home_team_predicted_win_pct"].between(0, 1).all()
     assert predictions["away_team_predicted_win_pct"].between(0, 1).all()
-    # Sum to 1.0
+
     total_probs = (
         predictions["home_team_predicted_win_pct"]
         + predictions["away_team_predicted_win_pct"]
@@ -98,9 +92,7 @@ def test_write_predictions_to_database_v2(postgres_conn, v2_artifacts):
     )
 
     assert len(result) == len(predictions)
-    # Check that timestamps were populated
     assert result["created_at"].notna().all()
-    # Verify a specific row matches
     assert result.iloc[0]["home_team"] == predictions.iloc[0]["home_team"]
 
 
@@ -113,7 +105,7 @@ def test_write_predictions_to_database_no_rows(postgres_conn, v2_artifacts):
     )
     predictions = generate_win_predictions_v2(games, v2_artifacts)
 
-    predictions = predictions.iloc[0:0]  # Empty DataFrame
+    predictions = predictions.iloc[0:0]  # Empty the DataFrame
 
     # 2. Write
     write_predictions_to_database(
