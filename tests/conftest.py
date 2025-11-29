@@ -68,3 +68,49 @@ def v2_artifacts():
 def feature_flags_dataframe() -> pd.DataFrame:
     """Create sample feature flags DataFrame for testing."""
     return pd.DataFrame({"flag": ["season", "playoffs"], "is_enabled": [1, 0]})
+
+
+@pytest.fixture
+def v2_input_data() -> pd.DataFrame:
+    """
+    Creates a sample V2 DataFrame for testing inference.
+    Contains all columns required by the V2 Feature Schema.
+    """
+    data = {
+        # Metadata
+        "home_team": ["Phoenix Suns"],
+        "away_team": ["Denver Nuggets"],
+        "game_date": [
+            pd.Timestamp.now().date()
+        ],  # Defaults to today for date validation tests
+        "home_moneyline": [-150],
+        "away_moneyline": [130],
+        # Team Stats (Win Pct, Rank, Scoring)
+        "home_team_rank": [5],
+        "away_team_rank": [3],
+        "home_team_win_pct": [0.650],
+        "away_team_win_pct": [0.700],
+        "home_team_win_pct_last10": [0.800],
+        "away_team_win_pct_last10": [0.600],
+        "home_team_avg_pts_scored": [115.5],
+        "away_team_avg_pts_scored": [112.0],
+        "home_team_avg_pts_scored_opp": [110.0],
+        "away_team_avg_pts_scored_opp": [108.0],
+        # V2 Specifics (Fatigue / Travel)
+        "home_days_rest": [1],
+        "away_days_rest": [0],  # Back-to-back
+        "home_games_last_7_days": [3],
+        "away_games_last_7_days": [4],
+        "home_travel_miles_last_7_days": [500.0],
+        "away_travel_miles_last_7_days": [1200.0],
+        "home_is_cross_country_trip": [0],
+        "away_is_cross_country_trip": [0],
+        # V2 Specifics (Talent / VORP)
+        "home_star_score": [3],
+        "away_star_score": [2],
+        "home_active_vorp": [2.5],
+        "away_active_vorp": [4.2],
+        "home_pct_vorp_missing": [0.0],
+        "away_pct_vorp_missing": [0.15],
+    }
+    return pd.DataFrame(data)
