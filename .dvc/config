@@ -1,6 +1,0 @@
-[core]
-    remote = myremote
-    autostage = true # dvc will automatically stage modified files
-['remote "myremote"']
-    url = s3://jyablonski-dvc-praq
-    region = us-east-1

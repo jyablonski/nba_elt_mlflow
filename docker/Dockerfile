@@ -39,6 +39,7 @@ WORKDIR /home/appuser
 USER appuser
 
 COPY src/ ./src
+COPY ml_experiments/ ./ml_experiments
 
 RUN mkdir logs && touch logs/example.log
 

@@ -1,6 +1,7 @@
 # ML Pipeline for NBA ELT Project
 
-![Tests](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/test.yml/badge.svg) ![Deployment](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/deploy.yml/badge.svg) ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
+![Workflows](https://github.com/jyablonski/nba_elt_mlflow/actions/workflows/ci_cd.yml/badge.svg)
+![Coverage Status](https://coveralls.io/repos/github/jyablonski/nba_elt_mlflow/badge.svg)
 
 ## ML Pipeline
 
