@@ -1,91 +1,67 @@
 """
 NBA Game Prediction ML Experiments Package.
 
-This package provides improved training, data generation, model exploration,
-and comparison utilities for NBA win prediction models.
+This package provides a production-grade workflow for NBA win prediction,
+featuring Time-Series validation, Financial ROI simulation, and
+strict prevention of data leakage.
 
 Modules:
-    config: Configuration and constants for features, models, and hyperparameters
-    data_generator: Synthetic data generation for training augmentation
-    feature_engineering: Feature transformations and selection methods
-    models: Model factory and ensemble implementations
-    evaluation: Comprehensive evaluation metrics and analysis
-    training_pipeline: End-to-end training with CV and hyperparameter tuning
-    model_comparison: Model benchmarking and production readiness assessment
-    run_experiments: Main experiment runner script
+    config:              Schema definitions (V2), constants, and model hyperparameters.
+    data_generator:      Synthetic data generation with latent variable logic.
+    feature_engineering: Feature transformations, fatigue modeling, and selection.
+    models:              Model factory, ensemble implementations, and persistence.
+    evaluation:          Metrics (MCC, Brier), calibration analysis, and betting simulation.
+    training_pipeline:   End-to-end orchestration with TimeSeriesSplit CV.
+    model_comparison:    Benchmarking and production readiness checks.
+    run_experiments:     CLI entry point.
 
-Quick Start:
-    # Run with synthetic data
-    python -m ml_experiments.run_experiments --synthetic --samples 5000
+Quick Start (CLI):
+    # Run with synthetic data (End-to-end test)
+    python -m ml_experiments.run_experiments --synthetic --samples 2000
 
-    # Run with real data
-    python -m ml_experiments.run_experiments --data path/to/data.csv --tune
+    # Run with real data + Hyperparameter Tuning + Financial Check
+    python -m ml_experiments.run_experiments --data data/nba_games_v2.csv --tune --financial
 
-    # Feature analysis
-    python -m ml_experiments.run_experiments --data path/to/data.csv --analyze-features
+Example Usage (Python API):
+    from ml_experiments import TrainingPipeline, ModelComparison, ModelFactory
 
-Example Usage:
-    from ml_experiments import TrainingPipeline, ModelComparison
+    # 1. Initialize Pipeline (Enforces Time-Series Split)
+    pipeline = TrainingPipeline(test_size=0.2, cv_splits=5)
 
-    # Initialize pipeline
-    pipeline = TrainingPipeline(random_state=42)
+    # 2. Load & Prep (Splits data temporally to prevent leakage)
+    pipeline.load_and_prep_data("data/nba_games_v2.csv")
 
-    # Load and prepare data
-    df = pipeline.load_data("data.csv")
-    X, y = pipeline.prepare_data(df)
-    pipeline.split_data(X, y)
+    # 3. Train & Tune
+    result = pipeline.train_model("xgboost", hyperparameter_tuning=True)
 
-    # Train all available models
-    results = pipeline.train_all_models(hyperparameter_tuning=True)
+    # 4. Check Results
+    print(f"Test AUC: {result.test_metrics.auc}")
 
-    # Compare models
-    comparison = ModelComparison()
-    result = comparison.compare_models(...)
+    # 5. Save for Production
+    pipeline.save_artifacts(result, "models/prod_model.joblib")
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-# Lazy imports to avoid import errors if optional dependencies aren't installed
-def __getattr__(name):
-    """Lazy import of package components."""
-    if name == "FEATURE_COLUMNS":
-        from ml_experiments.config import FEATURE_COLUMNS
-        return FEATURE_COLUMNS
-    elif name == "TARGET_COLUMN":
-        from ml_experiments.config import TARGET_COLUMN
-        return TARGET_COLUMN
-    elif name == "MODEL_CONFIGS":
-        from ml_experiments.config import MODEL_CONFIGS
-        return MODEL_CONFIGS
-    elif name == "SyntheticDataGenerator":
-        from ml_experiments.data_generator import SyntheticDataGenerator
-        return SyntheticDataGenerator
-    elif name == "FeatureEngineer":
-        from ml_experiments.feature_engineering import FeatureEngineer
-        return FeatureEngineer
-    elif name == "ModelFactory":
-        from ml_experiments.models import ModelFactory
-        return ModelFactory
-    elif name == "ModelEvaluator":
-        from ml_experiments.evaluation import ModelEvaluator
-        return ModelEvaluator
-    elif name == "TrainingPipeline":
-        from ml_experiments.training_pipeline import TrainingPipeline
-        return TrainingPipeline
-    elif name == "ModelComparison":
-        from ml_experiments.model_comparison import ModelComparison
-        return ModelComparison
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
+# Explicit imports for better IDE Autocompletion
+from ml_experiments.config import FEATURE_COLUMNS, TARGET_COLUMN
+from ml_experiments.data_generator import SyntheticDataGenerator
+from ml_experiments.feature_engineering import FeatureEngineer
+from ml_experiments.models import ModelFactory
+from ml_experiments.evaluation import ModelEvaluator, EvaluationMetrics
+from ml_experiments.training_pipeline import TrainingPipeline, TrainingResult
+from ml_experiments.model_comparison import ModelComparison, ComparisonResult
 
 __all__ = [
     "FEATURE_COLUMNS",
     "TARGET_COLUMN",
-    "MODEL_CONFIGS",
     "SyntheticDataGenerator",
     "FeatureEngineer",
     "ModelFactory",
     "ModelEvaluator",
+    "EvaluationMetrics",
     "TrainingPipeline",
+    "TrainingResult",
     "ModelComparison",
+    "ComparisonResult",
 ]

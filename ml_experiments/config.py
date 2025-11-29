@@ -3,27 +3,44 @@ Configuration and constants for NBA ML experiments.
 
 Defines feature columns, target variable, model configurations,
 and hyperparameter search spaces.
+Updated for V2 Schema (VORP, Travel, and Star Scores).
 """
 
 from dataclasses import dataclass, field
 from typing import Any
 
-# Feature column definitions
+# Feature column definitions (Aligned with ml_game_features_v2 DDL)
 FEATURE_COLUMNS = [
+    # --- Home Team Stats ---
     "home_team_rank",
     "home_days_rest",
     "home_team_avg_pts_scored",
     "home_team_avg_pts_scored_opp",
     "home_team_win_pct",
     "home_team_win_pct_last10",
-    "home_is_top_players",
+    "home_star_score",
+    "home_active_vorp",
+    "home_pct_vorp_missing",
+    "home_travel_miles_last_7_days",
+    "home_games_last_7_days",
+    "home_is_cross_country_trip",
+    # --- Away Team Stats ---
     "away_team_rank",
     "away_days_rest",
     "away_team_avg_pts_scored",
     "away_team_avg_pts_scored_opp",
     "away_team_win_pct",
     "away_team_win_pct_last10",
-    "away_is_top_players",
+    "away_star_score",
+    "away_active_vorp",
+    "away_pct_vorp_missing",
+    "away_travel_miles_last_7_days",
+    "away_games_last_7_days",
+    "away_is_cross_country_trip",
+    # --- Calculated Differentials ---
+    "travel_miles_differential",
+    "star_score_differential",
+    "active_vorp_differential",
 ]
 
 # Columns that need to be excluded when loading data for training
@@ -50,22 +67,41 @@ TARGET_COLUMN = "outcome"
 HOME_FEATURES = [f for f in FEATURE_COLUMNS if f.startswith("home_")]
 AWAY_FEATURES = [f for f in FEATURE_COLUMNS if f.startswith("away_")]
 
-# Feature statistics for synthetic data generation (based on typical NBA data)
+# Feature statistics for synthetic data generation
+# Updated to reflect new VORP, Travel, and Star Score metrics
 FEATURE_STATS = {
+    # --- Ranks & Rest ---
     "home_team_rank": {"min": 1, "max": 30, "mean": 15.5, "std": 8.7},
     "away_team_rank": {"min": 1, "max": 30, "mean": 15.5, "std": 8.7},
-    "home_days_rest": {"min": 0, "max": 7, "mean": 1.5, "std": 1.2},
-    "away_days_rest": {"min": 0, "max": 7, "mean": 1.5, "std": 1.2},
-    "home_team_avg_pts_scored": {"min": 100, "max": 130, "mean": 112, "std": 5},
-    "away_team_avg_pts_scored": {"min": 100, "max": 130, "mean": 112, "std": 5},
-    "home_team_avg_pts_scored_opp": {"min": 100, "max": 130, "mean": 112, "std": 5},
-    "away_team_avg_pts_scored_opp": {"min": 100, "max": 130, "mean": 112, "std": 5},
+    "home_days_rest": {"min": 0, "max": 10, "mean": 1.5, "std": 1.2},
+    "away_days_rest": {"min": 0, "max": 10, "mean": 1.5, "std": 1.2},
+    # --- Scoring & Win Pct ---
+    "home_team_avg_pts_scored": {"min": 100, "max": 130, "mean": 114, "std": 5},
+    "away_team_avg_pts_scored": {"min": 100, "max": 130, "mean": 114, "std": 5},
+    "home_team_avg_pts_scored_opp": {"min": 100, "max": 130, "mean": 114, "std": 5},
+    "away_team_avg_pts_scored_opp": {"min": 100, "max": 130, "mean": 114, "std": 5},
     "home_team_win_pct": {"min": 0.1, "max": 0.9, "mean": 0.5, "std": 0.15},
     "away_team_win_pct": {"min": 0.1, "max": 0.9, "mean": 0.5, "std": 0.15},
-    "home_team_win_pct_last10": {"min": 0.0, "max": 1.0, "mean": 0.5, "std": 0.2},
-    "away_team_win_pct_last10": {"min": 0.0, "max": 1.0, "mean": 0.5, "std": 0.2},
-    "home_is_top_players": {"min": 0, "max": 2, "values": [0, 1, 2], "probs": [0.1, 0.2, 0.7]},
-    "away_is_top_players": {"min": 0, "max": 2, "values": [0, 1, 2], "probs": [0.1, 0.2, 0.7]},
+    "home_team_win_pct_last10": {"min": 0.0, "max": 1.0, "mean": 0.5, "std": 0.25},
+    "away_team_win_pct_last10": {"min": 0.0, "max": 1.0, "mean": 0.5, "std": 0.25},
+    # --- Star Power & VORP ---
+    "home_star_score": {"min": 0, "max": 5, "mean": 1.5, "std": 1.1},
+    "away_star_score": {"min": 0, "max": 5, "mean": 1.5, "std": 1.1},
+    "home_active_vorp": {"min": -2.0, "max": 15.0, "mean": 2.5, "std": 2.0},
+    "away_active_vorp": {"min": -2.0, "max": 15.0, "mean": 2.5, "std": 2.0},
+    "home_pct_vorp_missing": {"min": 0.0, "max": 0.6, "mean": 0.05, "std": 0.08},
+    "away_pct_vorp_missing": {"min": 0.0, "max": 0.6, "mean": 0.05, "std": 0.08},
+    # --- Travel & Fatigue ---
+    "home_travel_miles_last_7_days": {"min": 0, "max": 6000, "mean": 1200, "std": 800},
+    "away_travel_miles_last_7_days": {"min": 0, "max": 6000, "mean": 1200, "std": 800},
+    "home_games_last_7_days": {"min": 0, "max": 5, "mean": 2.5, "std": 1.0},
+    "away_games_last_7_days": {"min": 0, "max": 5, "mean": 2.5, "std": 1.0},
+    "home_is_cross_country_trip": {"values": [0, 1], "probs": [0.85, 0.15]},
+    "away_is_cross_country_trip": {"values": [0, 1], "probs": [0.85, 0.15]},
+    # --- Differentials (Used for edge case generation) ---
+    "travel_miles_differential": {"min": -4000, "max": 4000, "mean": 0, "std": 1000},
+    "star_score_differential": {"min": -5, "max": 5, "mean": 0, "std": 2},
+    "active_vorp_differential": {"min": -10, "max": 10, "mean": 0, "std": 3},
 }
 
 

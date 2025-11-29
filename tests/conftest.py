@@ -17,8 +17,7 @@ TEST_DB_PORT = 5432
 def postgres_conn():
     """
     Fixture to connect to Docker Postgres database.
-
-    Uses localhost for local testing, 'postgres' hostname for Docker Compose.
+    Assumes tables are pre-loaded via bootstrap script.
     """
     host = "postgres" if os.environ.get("ENV_TYPE") == "docker_dev" else "localhost"
 
@@ -51,6 +50,18 @@ def full_df() -> pd.DataFrame:
 def ml_model():
     """Load trained ML model from joblib fixture."""
     return load(FIXTURES_DIR / "log_model.joblib")
+
+
+@pytest.fixture(scope="session")
+def v2_artifacts():
+    """
+    Load V2 Production Artifacts (Dict containing Model + Feature Engineer).
+    Assumes you have copied the generated model to tests/fixtures/log_model_v2.joblib
+    """
+    path = FIXTURES_DIR / "log_model_v2.joblib"
+    if not path.exists():
+        pytest.skip("V2 Model artifact not found in fixtures")
+    return load(path)
 
 
 @pytest.fixture(scope="session")

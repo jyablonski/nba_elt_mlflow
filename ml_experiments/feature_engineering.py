@@ -2,11 +2,13 @@
 Feature engineering utilities for NBA game predictions.
 
 Provides feature transformations, derived features, and selection methods
-to improve model performance.
+aligned with the V2 Schema (VORP, Travel, Star Power).
 """
 
 import numpy as np
 import pandas as pd
+from typing import Optional, List, Tuple, Union
+
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.feature_selection import (
     SelectKBest,
@@ -15,339 +17,257 @@ from sklearn.feature_selection import (
     RFE,
 )
 from sklearn.ensemble import RandomForestClassifier
-from typing import Optional
+from sklearn.impute import SimpleImputer
 
 from ml_experiments.config import FEATURE_COLUMNS, TARGET_COLUMN
 
 
 class FeatureEngineer:
     """
-    Feature engineering for NBA game prediction models.
-
-    Provides methods for creating derived features, scaling,
-    and feature selection.
+    Feature engineering pipeline for NBA game prediction.
     """
 
     def __init__(self):
         """Initialize the feature engineer."""
-        self.scaler: Optional[StandardScaler | MinMaxScaler | RobustScaler] = None
-        self.selected_features: Optional[list[str]] = None
+        self.scaler: Optional[Union[StandardScaler, MinMaxScaler, RobustScaler]] = None
+        self.imputer: Optional[SimpleImputer] = None
+        self.selected_features: Optional[List[str]] = None
         self.feature_importances: Optional[pd.DataFrame] = None
 
+        # NEW: Store the exact column order used during training
+        self.numeric_cols_order: Optional[List[str]] = None
+
+    def preprocess_data(
+        self, df: pd.DataFrame, is_training: bool = True
+    ) -> pd.DataFrame:
+        """
+        Master method to run the full engineering pipeline.
+        """
+        df_eng = self.create_derived_features(df)
+
+        if is_training:
+            # --- TRAINING PHASE ---
+            # 1. Identify Numeric Columns
+            numeric_cols = df_eng.select_dtypes(include=[np.number]).columns.tolist()
+
+            # Remove target from scaling/imputation
+            if TARGET_COLUMN in numeric_cols:
+                numeric_cols.remove(TARGET_COLUMN)
+
+            # 2. SAVE THE ORDER (Critical Fix)
+            self.numeric_cols_order = numeric_cols
+
+            # 3. Clean Inf
+            df_eng[numeric_cols] = df_eng[numeric_cols].replace(
+                [np.inf, -np.inf], np.nan
+            )
+
+            # 4. Fit & Transform
+            self.imputer = SimpleImputer(strategy="median")
+            df_eng[numeric_cols] = self.imputer.fit_transform(df_eng[numeric_cols])
+
+        else:
+            # --- INFERENCE PHASE ---
+            if self.numeric_cols_order is None:
+                raise ValueError(
+                    "FeatureEngineer has not been fitted. Call with is_training=True first."
+                )
+
+            # 1. Enforce Exact Column Order
+            # Check for missing columns and fill with NaN (Imputer will handle them)
+            missing_cols = [
+                c for c in self.numeric_cols_order if c not in df_eng.columns
+            ]
+            if missing_cols:
+                for c in missing_cols:
+                    df_eng[c] = np.nan
+
+            # Select columns in the STRICT order learned during training
+            numeric_cols = self.numeric_cols_order
+
+            # 2. Clean Inf
+            df_eng[numeric_cols] = df_eng[numeric_cols].replace(
+                [np.inf, -np.inf], np.nan
+            )
+
+            # 3. Transform (will no longer error on order mismatch)
+            df_eng[numeric_cols] = self.imputer.transform(df_eng[numeric_cols])
+
+        return df_eng
+
     def create_derived_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Create derived features from existing columns.
-
-        Adds differential features and interaction terms that
-        may capture important patterns in the data.
-
-        Args:
-            df: Input DataFrame with base features
-
-        Returns:
-            DataFrame with additional derived features
-        """
+        """Create derived features based on V2 Schema."""
         result = df.copy()
 
-        # Win percentage differential
-        if "home_team_win_pct" in df.columns and "away_team_win_pct" in df.columns:
-            result["win_pct_diff"] = df["home_team_win_pct"] - df["away_team_win_pct"]
+        # --- 1. Basic Differentials ---
+        cols_to_diff = [
+            ("win_pct", "home_team_win_pct", "away_team_win_pct"),
+            ("recent_form", "home_team_win_pct_last10", "away_team_win_pct_last10"),
+            ("rank", "away_team_rank", "home_team_rank"),
+            ("star_score", "home_star_score", "away_star_score"),
+            ("vorp", "home_active_vorp", "away_active_vorp"),
+            (
+                "travel",
+                "home_travel_miles_last_7_days",
+                "away_travel_miles_last_7_days",
+            ),
+        ]
 
-        # Recent form differential
-        if (
-            "home_team_win_pct_last10" in df.columns
-            and "away_team_win_pct_last10" in df.columns
-        ):
-            result["recent_form_diff"] = (
-                df["home_team_win_pct_last10"] - df["away_team_win_pct_last10"]
-            )
+        for name, home_col, away_col in cols_to_diff:
+            if home_col in result.columns and away_col in result.columns:
+                result[f"{name}_diff"] = result[home_col] - result[away_col]
 
-        # Rank differential (positive means home team is better ranked)
-        if "home_team_rank" in df.columns and "away_team_rank" in df.columns:
-            result["rank_diff"] = df["away_team_rank"] - df["home_team_rank"]
+        # --- 2. Advanced Metrics ---
+        for side in ["home", "away"]:
+            pts_scored = f"{side}_team_avg_pts_scored"
+            pts_allowed = f"{side}_team_avg_pts_scored_opp"
+            if pts_scored in result.columns and pts_allowed in result.columns:
+                result[f"{side}_net_rating"] = result[pts_scored] - result[pts_allowed]
 
-        # Net rating for each team (offensive - defensive efficiency proxy)
-        if (
-            "home_team_avg_pts_scored" in df.columns
-            and "home_team_avg_pts_scored_opp" in df.columns
-        ):
-            result["home_net_rating"] = (
-                df["home_team_avg_pts_scored"] - df["home_team_avg_pts_scored_opp"]
-            )
-
-        if (
-            "away_team_avg_pts_scored" in df.columns
-            and "away_team_avg_pts_scored_opp" in df.columns
-        ):
-            result["away_net_rating"] = (
-                df["away_team_avg_pts_scored"] - df["away_team_avg_pts_scored_opp"]
-            )
-
-        # Net rating differential
         if "home_net_rating" in result.columns and "away_net_rating" in result.columns:
             result["net_rating_diff"] = (
                 result["home_net_rating"] - result["away_net_rating"]
             )
 
-        # Rest advantage
-        if "home_days_rest" in df.columns and "away_days_rest" in df.columns:
-            result["rest_diff"] = df["home_days_rest"] - df["away_days_rest"]
-            # Binary flag for significant rest advantage (3+ days more rest)
-            result["significant_rest_advantage"] = (result["rest_diff"] >= 3).astype(int)
-            result["significant_rest_disadvantage"] = (result["rest_diff"] <= -3).astype(
-                int
-            )
+        # --- 3. Fatigue & Travel Impact ---
+        result = self._calculate_fatigue_index(result)
 
-        # Top players differential
-        if "home_is_top_players" in df.columns and "away_is_top_players" in df.columns:
-            result["top_players_diff"] = (
-                df["home_is_top_players"] - df["away_is_top_players"]
-            )
-
-        # Momentum indicator (recent form vs season form)
-        if (
-            "home_team_win_pct" in df.columns
-            and "home_team_win_pct_last10" in df.columns
-        ):
-            result["home_momentum"] = (
-                df["home_team_win_pct_last10"] - df["home_team_win_pct"]
-            )
-
-        if (
-            "away_team_win_pct" in df.columns
-            and "away_team_win_pct_last10" in df.columns
-        ):
-            result["away_momentum"] = (
-                df["away_team_win_pct_last10"] - df["away_team_win_pct"]
-            )
-
-        # Combined strength indicator
-        if "win_pct_diff" in result.columns and "net_rating_diff" in result.columns:
-            result["combined_strength"] = (
-                result["win_pct_diff"] * 0.5 + result["net_rating_diff"] / 20 * 0.5
-            )
-
-        # Back-to-back game indicator
-        if "home_days_rest" in df.columns:
-            result["home_back_to_back"] = (df["home_days_rest"] == 0).astype(int)
-
-        if "away_days_rest" in df.columns:
-            result["away_back_to_back"] = (df["away_days_rest"] == 0).astype(int)
+        # --- 4. Momentum ---
+        for side in ["home", "away"]:
+            current = f"{side}_team_win_pct_last10"
+            season = f"{side}_team_win_pct"
+            if current in result.columns and season in result.columns:
+                result[f"{side}_momentum"] = result[current] - result[season]
 
         return result
 
-    def scale_features(
-        self,
-        df: pd.DataFrame,
-        method: str = "standard",
-        fit: bool = True,
-        feature_columns: Optional[list[str]] = None,
-    ) -> pd.DataFrame:
-        """
-        Scale numeric features using specified method.
-
-        Args:
-            df: Input DataFrame
-            method: Scaling method ('standard', 'minmax', 'robust')
-            fit: Whether to fit the scaler (False for transform only)
-            feature_columns: Columns to scale (default: all numeric)
-
-        Returns:
-            DataFrame with scaled features
-        """
-        result = df.copy()
-
-        if feature_columns is None:
-            feature_columns = [
-                col
-                for col in df.columns
-                if col != TARGET_COLUMN and df[col].dtype in [np.float64, np.int64]
+    def _calculate_fatigue_index(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate a composite fatigue score."""
+        for side in ["home", "away"]:
+            required = [
+                f"{side}_days_rest",
+                f"{side}_games_last_7_days",
+                f"{side}_travel_miles_last_7_days",
             ]
+            if not all(col in df.columns for col in required):
+                continue
 
-        if fit or self.scaler is None:
-            if method == "standard":
-                self.scaler = StandardScaler()
-            elif method == "minmax":
-                self.scaler = MinMaxScaler()
-            elif method == "robust":
-                self.scaler = RobustScaler()
-            else:
-                raise ValueError(f"Unknown scaling method: {method}")
+            # Weighted formula for fatigue
+            # Fill NaNs with 0 temporarily for calculation if columns exist but have nulls
+            rest = df[f"{side}_days_rest"].fillna(2)
+            games = df[f"{side}_games_last_7_days"].fillna(2)
+            miles = df[f"{side}_travel_miles_last_7_days"].fillna(500)
 
-            result[feature_columns] = self.scaler.fit_transform(df[feature_columns])
-        else:
-            result[feature_columns] = self.scaler.transform(df[feature_columns])
+            rest_factor = (3 - rest.clip(upper=3)) * 1.5
+            games_factor = games * 1.0
+            travel_factor = np.log1p(miles) * 0.5
 
+            cc_col = f"{side}_is_cross_country_trip"
+            cc_factor = df[cc_col].fillna(0) * 2.0 if cc_col in df.columns else 0
+
+            df[f"{side}_fatigue_index"] = (
+                rest_factor + games_factor + travel_factor + cc_factor
+            )
+
+        if "home_fatigue_index" in df.columns and "away_fatigue_index" in df.columns:
+            df["fatigue_diff"] = df["away_fatigue_index"] - df["home_fatigue_index"]
+
+        return df
+
+    # ... keep remaining methods (transform_skewed_features, select_features_*, etc.) ...
+    def transform_skewed_features(
+        self, df: pd.DataFrame, columns: List[str]
+    ) -> pd.DataFrame:
+        result = df.copy()
+        for col in columns:
+            if col in result.columns:
+                result[col] = np.log1p(result[col])
         return result
 
     def select_features_statistical(
-        self,
-        X: pd.DataFrame,
-        y: pd.Series,
-        k: int = 10,
-        method: str = "f_classif",
-    ) -> tuple[pd.DataFrame, list[str]]:
-        """
-        Select top k features using statistical tests.
-
-        Args:
-            X: Feature DataFrame
-            y: Target series
-            k: Number of features to select
-            method: Statistical method ('f_classif', 'mutual_info')
-
-        Returns:
-            Tuple of (selected features DataFrame, selected feature names)
-        """
+        self, X: pd.DataFrame, y: pd.Series, k: int = 15, method: str = "mutual_info"
+    ) -> Tuple[pd.DataFrame, List[str]]:
+        X_numeric = X.select_dtypes(include=[np.number])
         if method == "f_classif":
             selector = SelectKBest(f_classif, k=k)
         elif method == "mutual_info":
             selector = SelectKBest(mutual_info_classif, k=k)
         else:
             raise ValueError(f"Unknown selection method: {method}")
-
-        selector.fit(X, y)
+        selector.fit(X_numeric, y)
         mask = selector.get_support()
-        self.selected_features = list(X.columns[mask])
-
-        # Store feature scores
+        self.selected_features = list(X_numeric.columns[mask])
         scores = selector.scores_
         self.feature_importances = pd.DataFrame(
-            {"feature": X.columns, "score": scores}
+            {"feature": X_numeric.columns, "score": scores}
         ).sort_values("score", ascending=False)
-
         return X[self.selected_features], self.selected_features
 
     def select_features_rfe(
         self,
         X: pd.DataFrame,
         y: pd.Series,
-        n_features: int = 10,
+        n_features: int = 15,
         estimator: Optional[object] = None,
-    ) -> tuple[pd.DataFrame, list[str]]:
-        """
-        Select features using Recursive Feature Elimination.
-
-        Args:
-            X: Feature DataFrame
-            y: Target series
-            n_features: Number of features to select
-            estimator: Estimator to use (default: RandomForest)
-
-        Returns:
-            Tuple of (selected features DataFrame, selected feature names)
-        """
+    ) -> Tuple[pd.DataFrame, List[str]]:
+        X_numeric = X.select_dtypes(include=[np.number])
         if estimator is None:
-            estimator = RandomForestClassifier(n_estimators=100, random_state=42)
-
+            estimator = RandomForestClassifier(
+                n_estimators=100, random_state=42, n_jobs=-1
+            )
         rfe = RFE(estimator, n_features_to_select=n_features)
-        rfe.fit(X, y)
-
+        rfe.fit(X_numeric, y)
         mask = rfe.support_
-        self.selected_features = list(X.columns[mask])
-
-        # Store feature rankings
+        self.selected_features = list(X_numeric.columns[mask])
         self.feature_importances = pd.DataFrame(
-            {"feature": X.columns, "ranking": rfe.ranking_}
+            {"feature": X_numeric.columns, "ranking": rfe.ranking_}
         ).sort_values("ranking")
-
         return X[self.selected_features], self.selected_features
 
-    def get_feature_importance(
-        self,
-        model,
-        feature_names: list[str],
-    ) -> pd.DataFrame:
-        """
-        Extract feature importance from a trained model.
+    def remove_correlated_features(
+        self, df: pd.DataFrame, threshold: float = 0.90, exclude_target: bool = True
+    ) -> Tuple[pd.DataFrame, List[str]]:
+        if exclude_target and TARGET_COLUMN in df.columns:
+            feature_df = df.drop(columns=[TARGET_COLUMN])
+        else:
+            feature_df = df.copy()
+        feature_df = feature_df.select_dtypes(include=[np.number])
+        corr_matrix = feature_df.corr().abs()
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+        result = df.drop(columns=to_drop)
+        return result, to_drop
 
-        Args:
-            model: Trained model with feature_importances_ or coef_
-            feature_names: List of feature names
-
-        Returns:
-            DataFrame with feature importances sorted by importance
-        """
+    def get_feature_importance(self, model, feature_names: list[str]) -> pd.DataFrame:
         if hasattr(model, "feature_importances_"):
             importances = model.feature_importances_
         elif hasattr(model, "coef_"):
             importances = np.abs(model.coef_).flatten()
         else:
             raise ValueError("Model doesn't have feature_importances_ or coef_")
-
         self.feature_importances = pd.DataFrame(
             {"feature": feature_names, "importance": importances}
         ).sort_values("importance", ascending=False)
-
         return self.feature_importances
 
-    def remove_correlated_features(
-        self,
-        df: pd.DataFrame,
-        threshold: float = 0.95,
-        exclude_target: bool = True,
-    ) -> tuple[pd.DataFrame, list[str]]:
-        """
-        Remove highly correlated features to reduce multicollinearity.
-
-        Args:
-            df: Input DataFrame
-            threshold: Correlation threshold above which to remove features
-            exclude_target: Whether to exclude target column from consideration
-
-        Returns:
-            Tuple of (DataFrame with removed features, list of removed features)
-        """
-        if exclude_target and TARGET_COLUMN in df.columns:
-            feature_df = df.drop(columns=[TARGET_COLUMN])
-        else:
-            feature_df = df.copy()
-
-        # Calculate correlation matrix
-        corr_matrix = feature_df.corr().abs()
-
-        # Get upper triangle of correlation matrix
-        upper = corr_matrix.where(
-            np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
-        )
-
-        # Find features to drop
-        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
-
-        result = df.drop(columns=to_drop)
-
-        return result, to_drop
-
-    def get_all_feature_names(self, include_derived: bool = True) -> list[str]:
-        """
-        Get list of all feature names (base and optionally derived).
-
-        Args:
-            include_derived: Whether to include derived feature names
-
-        Returns:
-            List of feature names
-        """
+    def get_all_feature_names(self, include_derived: bool = True) -> List[str]:
         features = list(FEATURE_COLUMNS)
-
         if include_derived:
             derived = [
                 "win_pct_diff",
                 "recent_form_diff",
                 "rank_diff",
+                "star_score_diff",
+                "vorp_diff",
+                "travel_diff",
                 "home_net_rating",
                 "away_net_rating",
                 "net_rating_diff",
-                "rest_diff",
-                "significant_rest_advantage",
-                "significant_rest_disadvantage",
-                "top_players_diff",
+                "home_fatigue_index",
+                "away_fatigue_index",
+                "fatigue_diff",
                 "home_momentum",
                 "away_momentum",
-                "combined_strength",
-                "home_back_to_back",
-                "away_back_to_back",
             ]
             features.extend(derived)
-
         return features

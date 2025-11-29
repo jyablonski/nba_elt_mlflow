@@ -1,138 +1,80 @@
 """
-Main experiment runner for NBA game predictions.
+Main experiment runner for NBA game predictions (V2).
 
-This script demonstrates the full ML experimentation workflow including:
-- Data loading and preprocessing
-- Synthetic data generation
-- Feature engineering
-- Model training and hyperparameter tuning
-- Model comparison and evaluation
-- Production readiness assessment
+Orchestrates the workflow:
+1. Data Ingestion (Synthetic or File)
+2. Temporal Splitting (Preventing Leakage)
+3. Model Benchmarking (TimeSeries CV)
+4. Financial Simulation (ROI Calculation)
+5. Artifact Persistence
 
 Usage:
-    python -m ml_experiments.run_experiments --data path/to/data.csv
-    python -m ml_experiments.run_experiments --synthetic --samples 5000
+    python -m ml_experiments.run_experiments --data data/nba_games_v2.csv --financial-check
+    python -m ml_experiments.run_experiments --synthetic --samples 2000
 """
 
 import argparse
+import pandas as pd
 from pathlib import Path
 from typing import Optional
 
-import pandas as pd
-
-from ml_experiments.config import TARGET_COLUMN
 from ml_experiments.data_generator import SyntheticDataGenerator
-from ml_experiments.feature_engineering import FeatureEngineer
 from ml_experiments.models import ModelFactory, create_recommended_models
-from ml_experiments.evaluation import calculate_baseline_accuracy
 from ml_experiments.training_pipeline import TrainingPipeline
 from ml_experiments.model_comparison import ModelComparison
+from ml_experiments.feature_engineering import FeatureEngineer
 
 
-def run_synthetic_experiment(
-    n_samples: int = 5000,
-    output_dir: Optional[str] = None,
-    tune_hyperparameters: bool = False,
-) -> None:
-    """
-    Run experiments using synthetic data.
-
-    Useful for testing the pipeline and establishing baseline
-    performance expectations.
-    """
-    print("=" * 60)
-    print("SYNTHETIC DATA EXPERIMENT")
-    print("=" * 60)
-
-    # Generate synthetic data
-    print(f"\nGenerating {n_samples} synthetic samples...")
-    generator = SyntheticDataGenerator(random_state=42)
-    df = generator.generate_samples(n_samples=n_samples)
-
-    print(f"Generated dataset shape: {df.shape}")
-    print(f"Class distribution:\n{df[TARGET_COLUMN].value_counts()}")
-
-    # Run the pipeline
-    _run_pipeline(df, output_dir, tune_hyperparameters)
-
-
-def run_file_experiment(
+def run_experiment_workflow(
     data_filepath: str,
     output_dir: Optional[str] = None,
     tune_hyperparameters: bool = False,
-    augment_data: bool = False,
+    run_financial_check: bool = False,
+    date_col: str = "game_date",
+    model_filter: Optional[str] = None
 ) -> None:
     """
-    Run experiments using data from a file.
-
-    Args:
-        data_filepath: Path to CSV file with training data
-        output_dir: Directory for output files
-        tune_hyperparameters: Whether to tune hyperparameters
-        augment_data: Whether to augment with synthetic data
+    The Core Workflow: Agnostic to data source (Real vs Synthetic).
     """
-    print("=" * 60)
-    print("FILE DATA EXPERIMENT")
-    print("=" * 60)
-
-    # Load data
-    pipeline = TrainingPipeline()
-    df = pipeline.load_data(data_filepath)
-
-    print(f"Loaded dataset shape: {df.shape}")
-
-    if TARGET_COLUMN in df.columns:
-        print(f"Class distribution:\n{df[TARGET_COLUMN].value_counts()}")
-
-    # Optionally augment data
-    if augment_data:
-        print("\nAugmenting data with synthetic samples...")
-        generator = SyntheticDataGenerator(random_state=42)
-        df = generator.augment_dataset(df, augmentation_ratio=0.3)
-        print(f"Augmented dataset shape: {df.shape}")
-
-    # Run the pipeline
-    _run_pipeline(df, output_dir, tune_hyperparameters)
-
-
-def _run_pipeline(
-    df: pd.DataFrame,
-    output_dir: Optional[str],
-    tune_hyperparameters: bool,
-) -> None:
-    """Run the core ML pipeline on prepared data."""
-
-    # Initialize components
-    pipeline = TrainingPipeline(random_state=42, test_size=0.2, cv_folds=5)
-    comparison = ModelComparison(random_state=42)
+    # 1. Initialize Components
+    pipeline = TrainingPipeline(
+        test_size=0.20,  # Test on last 20% of games
+        cv_splits=5,  # 5 Time-series folds
+        date_column=date_col,
+    )
+    comparison = ModelComparison()
     factory = ModelFactory()
 
-    # Prepare features
-    print("\nEngineering features...")
-    X, y = pipeline.prepare_data(df, add_derived_features=True)
-    print(f"Feature matrix shape: {X.shape}")
-    print(f"Features: {list(X.columns)}")
+    # 2. Load & Prepare Data (Strict Temporal Split)
+    # This sets pipeline.X_train, pipeline.X_test, etc.
+    pipeline.load_and_prep_data(data_filepath)
 
-    # Split data
-    pipeline.split_data(X, y)
-    print(f"\nTrain size: {len(pipeline.X_train)}")
-    print(f"Test size: {len(pipeline.X_test)}")
+    print(f"\n{'=' * 60}")
+    print("EXPERIMENT SETUP")
+    print(f"{'=' * 60}")
+    print(f"Training Samples: {len(pipeline.X_train)}")
+    print(f"Testing Samples:  {len(pipeline.X_test)}")
+    print(f"Features Used:    {len(pipeline.feature_names)}")
 
-    # Calculate baseline
-    baseline_acc = calculate_baseline_accuracy(pipeline.y_test)
-    print(f"Baseline accuracy (majority class): {baseline_acc:.4f}")
+    # 3. Define Models to Evaluate
+    all_models = create_recommended_models(factory)
 
-    # Get available models
-    available_models = factory.get_installed_models()
-    print(f"\nAvailable models: {available_models}")
+    # --- FILTER LOGIC START ---
+    if model_filter:
+        if model_filter in all_models:
+            print(f"Filtering to run only: {model_filter}")
+            models = {model_filter: all_models[model_filter]}
+        else:
+            raise ValueError(f"Model '{model_filter}' not found. Available: {list(all_models.keys())}")
+    else:
+        models = all_models
+    # --- FILTER LOGIC END ---
+    print(f"Models selected: {list(models.keys())}")
 
-    # Create models for comparison
-    models = create_recommended_models(factory)
-
-    # Run comparison
-    print("\n" + "=" * 60)
-    print("MODEL COMPARISON")
-    print("=" * 60)
+    # 4. Run Comparison (TimeSeries Cross-Validation)
+    print(f"\n{'=' * 60}")
+    print("BENCHMARKING MODELS (TimeSeries CV)")
+    print(f"{'=' * 60}")
 
     result = comparison.compare_models(
         models=models,
@@ -140,209 +82,185 @@ def _run_pipeline(
         y_train=pipeline.y_train,
         X_test=pipeline.X_test,
         y_test=pipeline.y_test,
-        cv_folds=5,
-        include_baseline=True,
+        cv_splits=5,
+        use_time_series_split=True,
     )
 
-    # Print report
-    report = comparison.generate_comparison_report(result)
-    print("\n" + report)
+    # Print Leaderboard
+    print("\n>>> LEADERBOARD (Sorted by CV AUC) <<<")
+    print(
+        result.rankings[
+            ["model", "cv_auc_mean", "test_auc", "test_acc", "test_brier"]
+        ].to_string(index=False)
+    )
 
-    # Hyperparameter tuning for top models if requested
+    # 5. Hyperparameter Tuning (Optional)
+    # If the user requested tuning, we take the winner and tune it.
+    best_model_name = result.best_model_name
+    best_model_obj = result.best_model
+
     if tune_hyperparameters:
-        print("\n" + "=" * 60)
-        print("HYPERPARAMETER TUNING")
-        print("=" * 60)
+        print(f"\n{'=' * 60}")
+        print(f"TUNING BEST MODEL: {best_model_name}")
+        print(f"{'=' * 60}")
 
-        # Get top 3 models for tuning
-        top_models = result.rankings.head(3)["model"].tolist()
-        top_models = [m for m in top_models if m != "baseline"]
-
-        tuned_results = {}
-        for model_name in top_models:
-            if model_name in factory.get_installed_models():
-                print(f"\nTuning {model_name}...")
-                tuned_result = pipeline.train_model(
-                    model_name,
-                    hyperparameter_tuning=True,
-                    tuning_method="random",
-                    n_iter=30,
-                )
-                tuned_results[model_name] = tuned_result
-                print(f"Best params: {tuned_result.best_params}")
-                print(f"Test ROC AUC: {tuned_result.test_metrics.roc_auc:.4f}")
-
-    # Create ensemble from top performers
-    print("\n" + "=" * 60)
-    print("ENSEMBLE MODEL")
-    print("=" * 60)
-
-    # Get top 3 non-baseline models
-    top_for_ensemble = [
-        m for m in result.rankings.head(4)["model"].tolist()
-        if m != "baseline" and m in factory.get_installed_models()
-    ][:3]
-
-    if len(top_for_ensemble) >= 2:
-        print(f"Creating voting ensemble from: {top_for_ensemble}")
-        ensemble_result = pipeline.create_ensemble(
-            model_names=top_for_ensemble,
-            ensemble_type="voting",
+        tune_result = pipeline.train_model(
+            best_model_name,
+            hyperparameter_tuning=True,
+            tuning_method="random",
+            n_iter=20,
         )
-        print(f"Ensemble Test ROC AUC: {ensemble_result.test_metrics.roc_auc:.4f}")
-        print(f"Ensemble Test Accuracy: {ensemble_result.test_metrics.accuracy:.4f}")
+        best_model_obj = tune_result.best_model
+        print(f"New Test AUC after tuning: {tune_result.test_metrics.auc:.4f}")
+        print(f"Best Params: {tune_result.best_params}")
 
-    # Production readiness check
-    print("\n" + "=" * 60)
-    print("PRODUCTION READINESS CHECK")
-    print("=" * 60)
+    # 6. Financial / Production Readiness Check
+    print(f"\n{'=' * 60}")
+    print("PRODUCTION READINESS & FINANCIAL SIMULATION")
+    print(f"{'=' * 60}")
+
+    # recover odds for the test set to calculate ROI
+    test_odds = None
+    if run_financial_check:
+        # We need to reload the raw data to get the odds corresponding to the test indices
+        # Since pipeline splits by simple index on sorted data:
+        raw_df = pd.read_csv(data_filepath)
+        if date_col in raw_df.columns:
+            raw_df = raw_df.sort_values(date_col).reset_index(drop=True)
+
+        split_idx = int(len(raw_df) * (1 - pipeline.test_size))
+        test_odds = raw_df.iloc[split_idx:].reset_index(drop=True)
+
+        # Verify alignment
+        if len(test_odds) != len(pipeline.y_test):
+            print("Warning: Odds dataframe length mismatch. Skipping financial check.")
+            test_odds = None
 
     readiness = comparison.check_production_readiness(
-        result.best_model,
-        pipeline.X_test,
-        pipeline.y_test,
-        baseline_accuracy=baseline_acc,
+        best_model_obj, pipeline.X_test, pipeline.y_test, test_odds_df=test_odds
     )
 
-    print(f"\nBest model: {result.best_model_name}")
-    print(f"Production ready: {readiness['production_ready']}")
+    print(f"\nSelected Model: {best_model_name}")
+    print(f"Status: {'✅ READY' if readiness['production_ready'] else '❌ NOT READY'}")
+
     print("\nChecks:")
-    for check, passed in readiness["checks"].items():
-        status = "PASS" if passed else "FAIL"
-        print(f"  {check}: {status}")
+    for k, v in readiness["checks"].items():
+        print(f" - {k:<25}: {v}")
 
-    print("\nRecommendations:")
-    for rec in readiness["recommendations"]:
-        print(f"  - {rec}")
+    if "metrics" in readiness and "roi_simulation" in readiness["metrics"]:
+        print("\n💰 Financial Simulation (Kelly Criterion):")
+        print(f"   ROI: {readiness['metrics']['roi_simulation']:.2f}%")
 
-    # Save results if output directory specified
+    # 7. Save Artifacts
     if output_dir:
-        output_path = Path(output_dir)
-        output_path.mkdir(parents=True, exist_ok=True)
+        out_path = Path(output_dir)
+        comparison.export_results(result, out_path)
 
-        comparison.export_results(result, output_path)
+        # Create a result object to match pipeline expectation
+        from ml_experiments.training_pipeline import TrainingResult
 
-        # Save best model
-        pipeline.save_model(
-            result.best_model,
-            output_path / f"best_model_{result.best_model_name}.joblib",
+        final_result = TrainingResult(
+            model_name=best_model_name,
+            best_model=best_model_obj,
+            best_params={},  # Populated if tuned
+            cv_metrics={},
+            test_metrics=readiness["metrics"],  # Use the final metrics
+            feature_names=pipeline.feature_names,
+            training_samples=len(pipeline.X_train),
         )
 
-        print(f"\nResults saved to {output_path}")
+        pipeline.save_artifacts(final_result, out_path / "production_model.joblib")
 
 
-def run_feature_analysis(
-    data_filepath: str,
-) -> None:
-    """
-    Run feature analysis to understand feature importance and relationships.
-    """
-    print("=" * 60)
-    print("FEATURE ANALYSIS")
-    print("=" * 60)
+def run_synthetic_experiment(samples: int, output_dir: str, tune: bool, model: str = None):
+    """Generates data then runs the standard workflow."""
+    print(f"Generating {samples} synthetic samples...")
+    gen = SyntheticDataGenerator()
+    df = gen.generate_samples(n_samples=samples)
 
-    # Load and prepare data
+    # Save to temp file to reuse the file-based workflow logic
+    temp_path = "temp_synthetic_data.csv"
+    df.to_csv(temp_path, index=False)
+
+    try:
+        run_experiment_workflow(
+            data_filepath=temp_path,
+            output_dir=output_dir,
+            tune_hyperparameters=False,
+            run_financial_check=True,
+            model_filter=model  # Synthetic gen creates odds
+        )
+    finally:
+        # Cleanup
+        import os
+
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def run_feature_analysis(data_filepath: str):
+    """Standalone analysis of feature importance."""
+    print("Running Feature Analysis...")
     pipeline = TrainingPipeline()
-    df = pipeline.load_data(data_filepath)
-    X, y = pipeline.prepare_data(df, add_derived_features=True)
-    pipeline.split_data(X, y)
+    pipeline.load_and_prep_data(data_filepath)
 
     engineer = FeatureEngineer()
 
-    # Statistical feature selection
-    print("\nStatistical Feature Ranking (F-test):")
-    _, selected = engineer.select_features_statistical(
-        pipeline.X_train, pipeline.y_train, k=10, method="f_classif"
+    print("\n1. Mutual Information (Non-linear relationships):")
+    _, top_mi = engineer.select_features_statistical(
+        pipeline.X_train, pipeline.y_train, method="mutual_info", k=10
     )
-    print(engineer.feature_importances.head(15).to_string())
+    print(engineer.feature_importances.head(10))
 
-    # Mutual information
-    print("\n\nMutual Information Ranking:")
-    _, selected_mi = engineer.select_features_statistical(
-        pipeline.X_train, pipeline.y_train, k=10, method="mutual_info"
-    )
-    print(engineer.feature_importances.head(15).to_string())
-
-    # RFE with Random Forest
-    print("\n\nRecursive Feature Elimination (Random Forest):")
-    _, selected_rfe = engineer.select_features_rfe(
+    print("\n2. Recursive Feature Elimination (Random Forest):")
+    _, top_rfe = engineer.select_features_rfe(
         pipeline.X_train, pipeline.y_train, n_features=10
     )
-    print(f"Selected features: {selected_rfe}")
-
-    # Correlation analysis
-    print("\n\nHighly Correlated Features:")
-    _, dropped = engineer.remove_correlated_features(
-        pipeline.X_train, threshold=0.9
-    )
-    if dropped:
-        print(f"Features to consider removing: {dropped}")
-    else:
-        print("No highly correlated features found (threshold=0.9)")
+    print(f"Top 10 RFE: {top_rfe}")
 
 
 def main():
-    """Main entry point for the experiment runner."""
-    parser = argparse.ArgumentParser(
-        description="NBA Game Prediction ML Experiments"
+    parser = argparse.ArgumentParser(description="NBA Prediction Experiment Runner")
+
+    # Mode Selection
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--data", type=str, help="Path to real data CSV")
+    group.add_argument(
+        "--synthetic", action="store_true", help="Run with synthetic data"
+    )
+    group.add_argument(
+        "--analyze-features", type=str, help="Run feature analysis on this file"
+    )
+
+    # Options
+    parser.add_argument(
+        "--samples", type=int, default=2000, help="Num synthetic samples"
     )
     parser.add_argument(
-        "--data",
-        type=str,
-        help="Path to training data CSV file",
+        "--out", type=str, default="./experiment_results", help="Output directory"
     )
+    parser.add_argument("--tune", action="store_true", help="Enable hyperparam tuning")
     parser.add_argument(
-        "--synthetic",
+        "--financial",
         action="store_true",
-        help="Use synthetic data for experiments",
+        help="Run betting simulation (requires moneyline cols)",
     )
-    parser.add_argument(
-        "--samples",
-        type=int,
-        default=5000,
-        help="Number of synthetic samples to generate",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        help="Directory to save results",
-    )
-    parser.add_argument(
-        "--tune",
-        action="store_true",
-        help="Perform hyperparameter tuning",
-    )
-    parser.add_argument(
-        "--augment",
-        action="store_true",
-        help="Augment data with synthetic samples",
-    )
-    parser.add_argument(
-        "--analyze-features",
-        action="store_true",
-        help="Run feature analysis",
-    )
+    parser.add_argument("--model", type=str, help="Specific model to run (e.g. logistic_regression)")
 
     args = parser.parse_args()
 
-    if args.analyze_features and args.data:
-        run_feature_analysis(args.data)
-    elif args.synthetic:
-        run_synthetic_experiment(
-            n_samples=args.samples,
-            output_dir=args.output,
-            tune_hyperparameters=args.tune,
-        )
+    if args.synthetic:
+        run_synthetic_experiment(args.samples, args.out, args.tune, args.model)
+    elif args.analyze_features:
+        run_feature_analysis(args.analyze_features)
     elif args.data:
-        run_file_experiment(
+        run_experiment_workflow(
             data_filepath=args.data,
-            output_dir=args.output,
+            output_dir=args.out,
             tune_hyperparameters=args.tune,
-            augment_data=args.augment,
+            run_financial_check=args.financial,
+            model_filter=args.model
         )
-    else:
-        print("Please specify --data <filepath> or --synthetic")
-        print("Run with --help for more options")
 
 
 if __name__ == "__main__":
