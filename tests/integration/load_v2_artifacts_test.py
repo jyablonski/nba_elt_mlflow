@@ -1,4 +1,6 @@
+from pathlib import Path
 from unittest.mock import patch
+
 from src.utils import load_v2_artifacts
 
 
@@ -13,7 +15,7 @@ def test_load_v2_artifacts_success():
         result = load_v2_artifacts("dummy/path/model.joblib")
 
         assert result == expected_data
-        mock_load.assert_called_once_with("dummy/path/model.joblib")
+        mock_load.assert_called_once_with(Path("dummy/path/model.joblib"))
 
 
 def test_load_v2_artifacts_file_not_found():

@@ -1,36 +1,72 @@
-import os
 from pathlib import Path
 
-from joblib import load
-from jyablonski_common_modules.sql import create_sql_engine
 import pandas as pd
 import pytest
+from joblib import load
+from jyablonski_common_modules.sql import create_sql_engine
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from testcontainers.postgres import PostgresContainer
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
-TEST_DB_USER = "postgres"
-TEST_DB_PASSWORD = "postgres"
-TEST_DB_NAME = "postgres"
-TEST_DB_PORT = 5432
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BOOTSTRAP_SQL = PROJECT_ROOT / "docker" / "postgres_bootstrap.sql"
+
+
+def pytest_collection_modifyitems(items):
+    """Apply unit/integration markers from test directory layout."""
+    for item in items:
+        path = Path(str(item.fspath))
+        if "integration" in path.parts:
+            item.add_marker(pytest.mark.integration)
+        elif "unit" in path.parts:
+            item.add_marker(pytest.mark.unit)
+
+
+def _bootstrap_database(engine) -> None:
+    sql = BOOTSTRAP_SQL.read_text()
+    conn = engine.raw_connection()
+    try:
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        with conn.cursor() as cursor:
+            cursor.execute(sql)
+    finally:
+        conn.close()
 
 
 @pytest.fixture(scope="session")
-def postgres_conn():
-    """
-    Fixture to connect to Docker Postgres database.
-    Assumes tables are pre-loaded via bootstrap script.
-    """
-    host = "postgres" if os.environ.get("ENV_TYPE") == "docker_dev" else "localhost"
+def postgres_container():
+    """Ephemeral Postgres for integration tests (requires Docker)."""
+    with PostgresContainer(
+        "postgres:16-alpine",
+        username="postgres",
+        password="postgres",
+        dbname="postgres",
+    ) as postgres:
+        yield postgres
 
+
+@pytest.fixture(scope="session")
+def postgres_engine(postgres_container):
     engine = create_sql_engine(
-        user=TEST_DB_USER,
-        password=TEST_DB_PASSWORD,
-        host=host,
-        database=TEST_DB_NAME,
+        user=postgres_container.username,
+        password=postgres_container.password,
+        host=postgres_container.get_container_host_ip(),
+        database=postgres_container.dbname,
         schema="silver",
-        port=TEST_DB_PORT,
+        port=int(postgres_container.get_exposed_port(5432)),
     )
+    _bootstrap_database(engine)
+    yield engine
+    engine.dispose()
 
-    with engine.begin() as conn:
+
+@pytest.fixture(scope="session")
+def postgres_conn(postgres_engine):
+    """
+    Session connection to the Testcontainers Postgres database.
+    Schema and seed data are loaded from docker/postgres_bootstrap.sql.
+    """
+    with postgres_engine.begin() as conn:
         yield conn
 
 
@@ -60,7 +96,7 @@ def v2_artifacts():
     """
     path = FIXTURES_DIR / "log_model_v2.joblib"
     if not path.exists():
-        pytest.skip("V2 Model artifact not found in fixtures")
+        pytest.skip("V2 Model artifact not found in fixtures")  # ty: ignore[too-many-positional-arguments]
     return load(path)
 
 

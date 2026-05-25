@@ -3,22 +3,27 @@ name = "nba-elt-mlflow"
 version = "1.5.1"
 description = "Ingestion Script for NBA ELT Project"
 authors = [{ name = "jyablonski9", email = "jyablonski9@gmail.com" }]
-requires-python = "~=3.12.0"
+requires-python = ">=3.14, <3.15"
 readme = "README.md"
-dependencies = ["scikit-learn>=1.3.1,<2", "jyablonski_common_modules>=0.0.6"]
+dependencies = [
+    "scikit-learn>=1.7.2,<1.8",
+    "jyablonski_common_modules>=0.0.9",
+    "requests>=2.32.0,<3",
+]
 
 [dependency-groups]
 dev = [
     "coveralls>=4.0.2",
     "pytest>=7.4.2,<8",
     "pytest-cov>=7.0.0",
+    "testcontainers[postgres]>=4.9.0",
+    "ty>=0.0.39",
 ]
 local = [
     "ipykernel>=6.25.2",
     "matplotlib>=3.8.0",
     "mlflow>=2.7.1",
     "ruff>=0.0.292",
-    "mypy>=1.17.0",
 ]
 ml-experiments = [
     "xgboost>=2.0.0",
@@ -34,17 +39,36 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=80",
+    "--color=yes",
+]
 filterwarnings = [
-    "ignore:Trying to unpickle estimator LogisticRegression from version:sklearn.base.InconsistentVersionWarning",
+    "ignore:Trying to unpickle estimator .* from version:sklearn.base.InconsistentVersionWarning",
     "ignore:X has feature names, but LogisticRegression was fitted without feature names:UserWarning",
     "ignore::DeprecationWarning",
 ]
-testpaths = ["tests"]
 markers = [
+    "integration: Integration tests that require external services",
+    "unit: Unit tests that don't require external dependencies",
     "wip: work in progress",
     "infrastructure: mocks for dummy data (sql db, http endpoint etc)",
 ]
-addopts = "-v"
+
+[tool.ty.src]
+include = ["src", "tests"]
+exclude = ["practice", "ml_experiments"]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -53,4 +77,4 @@ ignore_missing_imports = true
 extend-exclude = ["practice/", "ml_experiments/"]
 
 [tool.coverage.run]
-omit = ["src/app.py", "tests/*"]
+omit = ["tests/*"]

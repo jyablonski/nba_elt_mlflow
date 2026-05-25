@@ -1,12 +1,13 @@
 from datetime import datetime
 import logging
+from pathlib import Path
 from typing import Any, Dict
 
 from joblib import load
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sqlalchemy.engine.base import Connection, Engine
+from sqlalchemy.engine import Connection
 from jyablonski_common_modules.sql import write_to_sql_upsert
 
 from ml_experiments.training_pipeline import TrainingPipeline
@@ -29,9 +30,7 @@ ML_EXCLUDE_COLUMNS = [
 ]
 
 
-def get_feature_flags(
-    connection: Connection | Engine, schema: str = "gold"
-) -> pd.DataFrame:
+def get_feature_flags(connection: Connection, schema: str = "gold") -> pd.DataFrame:
     """Retrieve feature flags from the database."""
     flags = pd.read_sql_query(
         sql=f"select * from {schema}.feature_flags", con=connection
@@ -57,7 +56,7 @@ def check_feature_flag(flag: str, flags_df: pd.DataFrame) -> bool:
 
 
 def pull_tonights_games(
-    connection: Connection | Engine,
+    connection: Connection,
     schema: str,
     table: str = INPUT_ML_TABLE,
 ) -> pd.DataFrame:
@@ -85,7 +84,7 @@ def load_v2_artifacts(model_path: str) -> Dict[str, Any]:
     Returns dict with keys: 'model', 'feature_engineer', 'feature_names', etc.
     """
     try:
-        artifacts = TrainingPipeline.load_artifacts(model_path)
+        artifacts = TrainingPipeline.load_artifacts(Path(model_path))
         logger.info(f"Loaded V2 artifacts from {model_path}")
         return artifacts
     except FileNotFoundError:
@@ -116,10 +115,11 @@ def generate_win_predictions(
 
     # Generate predictions
     predictions = ml_model.predict_proba(ml_features)
-    prediction_df = pd.DataFrame(
-        predictions,
-        columns=["away_team_predicted_win_pct", "home_team_predicted_win_pct"],
-    ).round(3)
+    prediction_df = pd.DataFrame(predictions).round(3)
+    prediction_df.columns = [
+        "away_team_predicted_win_pct",
+        "home_team_predicted_win_pct",
+    ]
 
     # Combine with original data
     result_df = games_df.reset_index(drop=True).drop(
@@ -201,11 +201,11 @@ def generate_win_predictions_v2(
 
 
 def write_predictions_to_database(
-    connection: Connection | Engine,
+    connection: Connection,
     predictions_df: pd.DataFrame,
     schema: str,
     table: str = OUTPUT_ML_TABLE,
-    primary_keys: list[str] = None,
+    primary_keys: list[str] | None = None,
 ) -> None:
     """Write predictions to the database using upsert logic."""
     if primary_keys is None:

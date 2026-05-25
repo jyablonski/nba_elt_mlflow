@@ -16,3 +16,6 @@ practice/*.csv
 practice/outdated/
 data/*.csv
 experiment_results/
+htmlcov/
+.coverage
+coverage.xml

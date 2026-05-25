@@ -10,7 +10,7 @@ env:
   IAM_ROLE: ${{ secrets.IAM_ROLE_ECR }}
   AWS_REGION: "us-east-1"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  UV_VERSION: "0.9.10"
+  UV_VERSION: "0.11.16"
 
 permissions:
   id-token: write
@@ -36,9 +36,11 @@ jobs:
           touch logs/example.log
         shell: bash
 
+      - name: Install dependencies
+        run: uv sync --frozen --group dev
+
       - name: Run Tests
-        run: |
-          make ci-test
+        run: make test
 
       - name: Coveralls
         run: uv run coveralls
