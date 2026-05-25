@@ -1,10 +1,10 @@
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/.venv/bin:/root/.cargo/bin:$PATH" \
     UV_COMPILE_BYTECODE=1 \
     UV_PYTHON_DOWNLOADS=never \
-    UV_PYTHON=3.12
+    UV_PYTHON=3.14
 
 # install OS-level deps once in base (so we don't repeat in each stage)
 RUN apt-get update && \
@@ -20,7 +20,7 @@ ARG INSTALL_DEV_DEPENDENCIES=false
 
 COPY pyproject.toml uv.lock ./
 
-RUN pip install uv==0.9.10 && \
+RUN pip install uv==0.11.16 && \
     if [ "$INSTALL_DEV_DEPENDENCIES" = "true" ]; then \
     uv sync --frozen; \
     else \
