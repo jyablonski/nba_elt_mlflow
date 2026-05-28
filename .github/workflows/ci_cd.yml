@@ -30,14 +30,8 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
 
-      - name: Create Logs File
-        run: |
-          mkdir logs
-          touch logs/example.log
-        shell: bash
-
       - name: Install dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --locked --group dev
 
       - name: Run Tests
         run: make test
